@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using IzmPortal.Application.Abstractions.Services;
+﻿using IzmPortal.Application.Abstractions.Services;
 using IzmPortal.Application.DTOs.Category;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace IzmPortal.Api.Controllers;
 
+[Authorize(Policy = "AdminAccess")]
 [ApiController]
 [Route("api/[controller]")]
 public class CategoriesController : ControllerBase
@@ -20,13 +22,12 @@ public class CategoriesController : ControllerBase
     public async Task<IActionResult> GetAll(CancellationToken ct)
     {
         var result = await _categoryService.GetAllAsync(ct);
-
         return Ok(result.Data);
     }
 
-    // GET: api/categories/5
-    [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id, CancellationToken ct)
+    // GET: api/categories/{id}
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
     {
         var result = await _categoryService.GetByIdAsync(id, ct);
 
@@ -50,10 +51,10 @@ public class CategoriesController : ControllerBase
         return Ok(result.Message);
     }
 
-    // PUT: api/categories/5
-    [HttpPut("{id:int}")]
+    // PUT: api/categories/{id}
+    [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(
-        int id,
+        Guid id,
         [FromBody] UpdateCategoryDto dto,
         CancellationToken ct)
     {

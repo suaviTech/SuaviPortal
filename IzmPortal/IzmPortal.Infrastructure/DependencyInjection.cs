@@ -1,11 +1,13 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using IzmPortal.Application.Abstractions.Repositories;
+using IzmPortal.Application.Abstractions.Services;
+using IzmPortal.Application.Services;
+using IzmPortal.Infrastructure.Identity;
+using IzmPortal.Infrastructure.Persistence;
+using IzmPortal.Infrastructure.Repositories;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using IzmPortal.Infrastructure.Identity;
-using IzmPortal.Infrastructure.Persistence;
-using IzmPortal.Application.Abstractions.Repositories;
-using IzmPortal.Infrastructure.Repositories;
 
 namespace IzmPortal.Infrastructure;
 
@@ -42,6 +44,10 @@ public static class DependencyInjection
         // Repositories
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IAnnouncementRepository, AnnouncementRepository>();
+
+        services.AddScoped<ICategoryService, CategoryService>();
+        services.AddScoped<IAnnouncementService, AnnouncementService>();
+
 
         return services;
     }

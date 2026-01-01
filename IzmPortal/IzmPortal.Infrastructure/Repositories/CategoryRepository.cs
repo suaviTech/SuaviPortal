@@ -14,7 +14,7 @@ public class CategoryRepository : ICategoryRepository
         _context = context;
     }
 
-    public async Task<Category?> GetByIdAsync(int id, CancellationToken ct = default)
+    public async Task<Category?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
         return await _context.Categories
             .FirstOrDefaultAsync(x => x.Id == id, ct);

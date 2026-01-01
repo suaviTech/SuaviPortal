@@ -35,7 +35,7 @@ public class CategoryService : ICategoryService
         return Result<List<CategoryDto>>.Success(dtoList);
     }
 
-    public async Task<Result<CategoryDto>> GetByIdAsync(int id, CancellationToken ct = default)
+    public async Task<Result<CategoryDto>> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
         var category = await _categoryRepository.GetByIdAsync(id, ct);
         if (category is null)
@@ -73,7 +73,7 @@ public class CategoryService : ICategoryService
                 .SetValue(category, dto.Name);
         }
 
-        // AKTİF → PASİF geçişi
+        // AKTİF → PASİF
         if (category.IsActive && !dto.IsActive)
         {
             category.Deactivate();
@@ -90,7 +90,7 @@ public class CategoryService : ICategoryService
             await _announcementRepository.UpdateRangeAsync(announcements, ct);
         }
 
-        // PASİF → AKTİF (duyurular otomatik açılmaz)
+        // PASİF → AKTİF
         if (!category.IsActive && dto.IsActive)
         {
             category.Activate();
@@ -101,4 +101,3 @@ public class CategoryService : ICategoryService
         return Result.Success("Kategori güncellendi.");
     }
 }
-

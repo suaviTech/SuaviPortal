@@ -13,7 +13,7 @@ public class Program
         // Add services to the container.
         builder.Services.AddInfrastructure(builder.Configuration);
 
-        builder.Services.AddControllers();
+       
         // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
         builder.Services.AddOpenApi();
 
@@ -34,6 +34,21 @@ public class Program
             )
         };
     });
+        builder.Services.AddAuthorization(options =>
+        {
+            options.AddPolicy("SuperAdminOnly", policy =>
+                policy.RequireRole("SuperAdmin"));
+
+            options.AddPolicy("AdminAccess", policy =>
+                policy.RequireRole("SuperAdmin", "Manager"));
+        });
+
+        builder.Services.AddControllers(options =>
+        {
+            options.Filters.Add<ForcePasswordChangeFilter>();
+        });
+
+
         builder.Services.AddScoped<JwtTokenGenerator>();
 
         var app = builder.Build();
@@ -43,7 +58,7 @@ public class Program
         {
             app.MapOpenApi();
         }
-
+        
         app.UseHttpsRedirection();
 
       
