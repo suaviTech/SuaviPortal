@@ -1,7 +1,5 @@
 ﻿using IzmPortal.Domain.Common;
 
-namespace IzmPortal.Domain.Entities;
-
 public class Category : BaseEntity
 {
     public string Name { get; private set; } = null!;

@@ -1,33 +1,21 @@
 ﻿using IzmPortal.Domain.Common;
-using IzmPortal.Domain.Enums;
-
-namespace IzmPortal.Domain.Entities;
 
 public class Announcement : BaseEntity
 {
     public string Title { get; private set; } = null!;
     public string Content { get; private set; } = null!;
-    public DateTime PublishAt { get; private set; }
-    public DateTime? ExpireAt { get; private set; }
-    public AnnouncementStatus Status { get; private set; }
+    public int CategoryId { get; private set; }
+    public bool IsActive { get; private set; } = true;
 
     protected Announcement() { }
 
-    public Announcement(string title, string content, DateTime publishAt)
+    public Announcement(string title, string content, int categoryId)
     {
         Title = title;
         Content = content;
-        PublishAt = publishAt;
-        Status = AnnouncementStatus.Draft;
+        CategoryId = categoryId;
     }
 
-    public void Publish()
-    {
-        Status = AnnouncementStatus.Published;
-    }
-
-    public void Expire()
-    {
-        Status = AnnouncementStatus.Expired;
-    }
+    public void Activate() => IsActive = true;
+    public void Deactivate() => IsActive = false;
 }
