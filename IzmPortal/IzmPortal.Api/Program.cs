@@ -1,4 +1,7 @@
+using IzmPortal.Api.Security;
 using IzmPortal.Infrastructure;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 namespace IzmPortal.Api;
 
 public class Program
@@ -14,6 +17,25 @@ public class Program
         // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
         builder.Services.AddOpenApi();
 
+        builder.Services
+    .AddAuthentication("Bearer")
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new()
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)
+            )
+        };
+    });
+        builder.Services.AddScoped<JwtTokenGenerator>();
+
         var app = builder.Build();
 
         // Configure the HTTP request pipeline.
@@ -24,8 +46,9 @@ public class Program
 
         app.UseHttpsRedirection();
 
+      
+        app.UseAuthentication();
         app.UseAuthorization();
-
 
         app.MapControllers();
 

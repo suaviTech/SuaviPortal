@@ -1,11 +1,11 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using IzmPortal.Application.Abstractions.Repositories;
-using IzmPortal.Application.Abstractions.Services;
+using IzmPortal.Infrastructure.Identity;
 using IzmPortal.Infrastructure.Persistence;
+using IzmPortal.Application.Abstractions.Repositories;
 using IzmPortal.Infrastructure.Repositories;
-using IzmPortal.Application.Services;
 
 namespace IzmPortal.Infrastructure;
 
@@ -22,13 +22,28 @@ public static class DependencyInjection
         services.AddDbContext<PersonalDbContext>(options =>
             options.UseSqlServer(configuration.GetConnectionString("PersonalConnection")));
 
+        // 🔐 IDENTITY (EKSİK OLAN KISIM BUYDU)
+        services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+        {
+            options.Password.RequiredLength = 4;
+            options.Password.RequireDigit = true;
+
+            options.Password.RequireLowercase = false;
+            options.Password.RequireUppercase = false;
+            options.Password.RequireNonAlphanumeric = false;
+
+            options.Password.RequiredUniqueChars = 1;
+        })
+.AddEntityFrameworkStores<PortalDbContext>()
+.AddDefaultTokenProviders();
+
+
+
         // Repositories
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IAnnouncementRepository, AnnouncementRepository>();
 
-        // Services
-        services.AddScoped<ICategoryService, CategoryService>();
-
         return services;
     }
 }
+

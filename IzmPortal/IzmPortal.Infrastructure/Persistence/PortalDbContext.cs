@@ -1,9 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using IzmPortal.Domain.Entities;
+using IzmPortal.Infrastructure.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 namespace IzmPortal.Infrastructure.Persistence;
 
-public class PortalDbContext : DbContext
+public class PortalDbContext : IdentityDbContext<ApplicationUser>
 {
     public PortalDbContext(DbContextOptions<PortalDbContext> options)
         : base(options)
@@ -17,7 +19,8 @@ public class PortalDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(PortalDbContext).Assembly);
         base.OnModelCreating(modelBuilder);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(PortalDbContext).Assembly);
+        
     }
 }
