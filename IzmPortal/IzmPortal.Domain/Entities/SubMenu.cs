@@ -2,35 +2,29 @@
 
 namespace IzmPortal.Domain.Entities;
 
-public class Menu : BaseEntity
+public class SubMenu : BaseEntity
 {
     public string Title { get; private set; } = null!;
     public int Order { get; private set; }
-    public bool IsActive { get; private set; }
+    public bool IsActive { get; private set; } = true;
 
-    public ICollection<SubMenu> SubMenus { get; private set; } = new List<SubMenu>();
+    public Guid MenuId { get; private set; }
 
-    protected Menu() { }
+    // 🔥 EKLENECEK SATIR
+    public ICollection<MenuDocument> Documents { get; private set; } = new List<MenuDocument>();
+    protected SubMenu() { }
 
-    public Menu(string title, int order)
+    public SubMenu(
+        string title,
+        int order,
+        Guid menuId)
     {
         Title = title;
         Order = order;
-        IsActive = true;
+        MenuId = menuId;
         CreatedAt = DateTime.UtcNow;
     }
 
-    public void Rename(string title)
-    {
-        Title = title;
-        UpdatedAt = DateTime.UtcNow;
-    }
-
-    public void ChangeOrder(int order)
-    {
-        Order = order;
-        UpdatedAt = DateTime.UtcNow;
-    }
     public void Update(string title, int order)
     {
         Title = title;

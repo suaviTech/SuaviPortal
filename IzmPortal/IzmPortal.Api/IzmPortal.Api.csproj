@@ -20,4 +20,10 @@
     <ProjectReference Include="..\IzmPortal.Infrastructure\IzmPortal.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\uploads\docs\menus\" />
+    <Folder Include="wwwroot\uploads\docs\announcements\" />
+    <Folder Include="wwwroot\uploads\images\sliders\" />
+  </ItemGroup>
+
 </Project>

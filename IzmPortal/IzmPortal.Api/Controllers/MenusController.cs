@@ -1,0 +1,93 @@
+﻿using IzmPortal.Application.Abstractions.Services;
+using IzmPortal.Application.DTOs.Menu;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace IzmPortal.Api.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class MenusController : ControllerBase
+{
+    private readonly IMenuService _menuService;
+
+    public MenusController(IMenuService menuService)
+    {
+        _menuService = menuService;
+    }
+
+    // 🔓 Public
+    [HttpGet]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetAll(CancellationToken ct)
+    {
+        var result = await _menuService.GetAllAsync(ct);
+        return Ok(result.Data);
+    }
+
+    // 🔐 Admin
+    [HttpGet("{id:guid}")]
+    [Authorize(Policy = "AdminAccess")]
+    public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
+    {
+        var result = await _menuService.GetByIdAsync(id, ct);
+
+        if (!result.Succeeded)
+            return NotFound(result.Message);
+
+        return Ok(result.Data);
+    }
+
+    // 🔐 Admin
+    [HttpPost]
+    [Authorize(Policy = "AdminAccess")]
+    public async Task<IActionResult> Create(
+        [FromBody] CreateMenuDto dto,
+        CancellationToken ct)
+    {
+        var result = await _menuService.CreateAsync(dto, ct);
+
+        if (!result.Succeeded)
+            return BadRequest(result.Message);
+
+        return Ok(result.Message);
+    }
+
+    // 🔐 Admin
+    [HttpPut("{id:guid}")]
+    [Authorize(Policy = "AdminAccess")]
+    public async Task<IActionResult> Update(
+        Guid id,
+        [FromBody] UpdateMenuDto dto,
+        CancellationToken ct)
+    {
+        if (id != dto.Id)
+            return BadRequest("Id uyuşmazlığı.");
+
+        var result = await _menuService.UpdateAsync(dto, ct);
+
+        if (!result.Succeeded)
+            return BadRequest(result.Message);
+
+        return Ok(result.Message);
+    }
+
+    // 🔐 Admin
+    [HttpPut("{id:guid}/activate")]
+    [Authorize(Policy = "AdminAccess")]
+    public async Task<IActionResult> Activate(Guid id, CancellationToken ct)
+    {
+        var result = await _menuService.ActivateAsync(id, ct);
+        return result.Succeeded ? Ok(result.Message) : BadRequest(result.Message);
+    }
+
+    // 🔐 Admin
+    [HttpPut("{id:guid}/deactivate")]
+    [Authorize(Policy = "AdminAccess")]
+    public async Task<IActionResult> Deactivate(Guid id, CancellationToken ct)
+    {
+        var result = await _menuService.DeactivateAsync(id, ct);
+        return result.Succeeded ? Ok(result.Message) : BadRequest(result.Message);
+    }
+}
+

@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using IzmPortal.Infrastructure.Services;
+
 
 namespace IzmPortal.Infrastructure;
 
@@ -47,6 +49,11 @@ public static class DependencyInjection
 
         services.AddScoped<ICategoryService, CategoryService>();
         services.AddScoped<IAnnouncementService, AnnouncementService>();
+
+        services.AddScoped<IFileStorageService, LocalFileStorageService>();
+
+        services.AddScoped<ISliderRepository, SliderRepository>();
+        services.AddScoped<ISliderService, SliderService>();
 
 
         return services;
