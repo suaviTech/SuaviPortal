@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="IzmPortal.Api/IzmPortal.Api.csproj" />
+  <Project Path="IzmPortal.Application/IzmPortal.Application.csproj" />
+  <Project Path="IzmPortal.Domain/IzmPortal.Domain.csproj" />
+  <Project Path="IzmPortal.Infrastructure/IzmPortal.Infrastructure.csproj" />
+</Solution>
