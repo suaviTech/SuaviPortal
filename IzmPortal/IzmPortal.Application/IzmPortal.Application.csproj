@@ -10,4 +10,8 @@
     <ProjectReference Include="..\IzmPortal.Domain\IzmPortal.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="DTOs\Announcement\" />
+  </ItemGroup>
+
 </Project>
