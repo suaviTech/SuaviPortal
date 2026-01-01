@@ -15,10 +15,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Controllers\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\IzmPortal.Application\IzmPortal.Application.csproj" />
     <ProjectReference Include="..\IzmPortal.Infrastructure\IzmPortal.Infrastructure.csproj" />
   </ItemGroup>
