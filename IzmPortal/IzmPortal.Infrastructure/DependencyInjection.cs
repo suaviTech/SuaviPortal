@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using IzmPortal.Infrastructure.Services;
 
 
+
 namespace IzmPortal.Infrastructure;
 
 public static class DependencyInjection
@@ -55,6 +56,8 @@ public static class DependencyInjection
         services.AddScoped<ISliderRepository, SliderRepository>();
         services.AddScoped<ISliderService, SliderService>();
 
+        services.AddScoped<IApplicationShortcutRepository, ApplicationShortcutRepository>();
+        services.AddScoped<IApplicationShortcutService, ApplicationShortcutService>();
 
         return services;
     }
