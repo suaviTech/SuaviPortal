@@ -2,6 +2,7 @@
 using IzmPortal.Api.Security;
 using IzmPortal.Infrastructure.Identity;
 using IzmPortal.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -32,14 +33,14 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login(LoginRequest request)
     {
-        // 1️⃣ Identity'de var mı?
-        var user = await _userManager.FindByNameAsync(request.Username);
+        // 1️⃣ Identity’de var mı?
+        var user = await _userManager.FindByNameAsync(request.Email);
 
         if (user is null)
         {
             // 2️⃣ PersonalDB lookup
             var person = await _personalDb.Tbl_Personal
-                .FirstOrDefaultAsync(x => x.Username == request.Username);
+                .FirstOrDefaultAsync(x => x.Username == request.Email);
 
             if (person is null)
                 return Unauthorized("Kullanıcı bulunamadı.");
@@ -48,8 +49,10 @@ public class AuthController : ControllerBase
             user = new ApplicationUser
             {
                 UserName = person.Username,
+                Email = person.Username,
                 TcNumber = person.TcNumber,
-                ForcePasswordChange = true
+                ForcePasswordChange = true,
+                EmailConfirmed = true
             };
 
             var initialPassword = person.TcNumber[^4..];
@@ -76,30 +79,19 @@ public class AuthController : ControllerBase
         });
     }
 
-    [Authorize]
+
+
+
+    [Authorize(Policy = "AdminAccess")]
     [HttpPost("change-password")]
     public async Task<IActionResult> ChangePassword(ChangePasswordRequest request)
     {
-        var username = User.FindFirstValue(ClaimTypes.NameIdentifier)
-                       ?? User.Identity?.Name;
+        var userName = User.Identity!.Name!;
+        var user = await _userManager.FindByNameAsync(userName);
 
-        if (string.IsNullOrWhiteSpace(username))
+        if (user == null)
             return Unauthorized();
 
-        var user = await _userManager.FindByNameAsync(username);
-        if (user is null)
-            return Unauthorized();
-
-        // 🔒 PIN format kontrolü (0000–9999)
-        if (!Regex.IsMatch(request.NewPassword, @"^\d{4}$"))
-            return BadRequest("Yeni şifre 4 haneli ve sadece rakam olmalıdır.");
-
-        // Eski PIN doğru mu?
-        var check = await _userManager.CheckPasswordAsync(user, request.CurrentPassword);
-        if (!check)
-            return BadRequest("Mevcut şifre hatalı.");
-
-        // Şifre değiştir
         var result = await _userManager.ChangePasswordAsync(
             user,
             request.CurrentPassword,
@@ -109,20 +101,15 @@ public class AuthController : ControllerBase
         if (!result.Succeeded)
             return BadRequest(result.Errors);
 
-        // 🔓 Zorunluluk kalktı
         user.ForcePasswordChange = false;
         await _userManager.UpdateAsync(user);
 
-        // 🔑 Yeni JWT
-        var roles = await _userManager.GetRolesAsync(user);
-        var token = _jwt.GenerateToken(user, roles);
-
-        return Ok(new
-        {
-            message = "PIN başarıyla değiştirildi.",
-            token,
-            forcePasswordChange = false
-        });
+        return Ok("Şifre başarıyla değiştirildi.");
     }
+
+
+
+
+
 }
 

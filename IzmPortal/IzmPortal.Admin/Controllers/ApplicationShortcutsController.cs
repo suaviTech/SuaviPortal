@@ -14,12 +14,27 @@ public class ApplicationShortcutsController : Controller
         _api = factory.CreateClient("ApiClient");
     }
 
-    // LIST
     public async Task<IActionResult> Index()
     {
-        var items = await _api.GetFromJsonAsync<List<ApplicationShortcutAdminDto>>(
-            "/api/application-shortcuts/admin");
-        return View(items);
+        var response = await _api.GetAsync("/api/application-shortcuts/admin");
+
+        // 🔐 TOKEN SÜRESİ DOLMUŞ / YETKİ YOK
+        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            // ApiAuthHandler zaten logout + redirect yaptı
+            return new EmptyResult(); // pipeline bozulmasın
+        }
+
+        if (!response.IsSuccessStatusCode)
+        {
+            ViewBag.Error = "Veriler alınamadı";
+            return View(new List<ApplicationShortcutAdminDto>());
+        }
+
+        var items = await response.Content
+            .ReadFromJsonAsync<List<ApplicationShortcutAdminDto>>();
+
+        return View(items ?? new());
     }
 
     // CREATE

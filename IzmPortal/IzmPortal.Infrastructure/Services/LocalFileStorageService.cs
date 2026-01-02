@@ -18,13 +18,19 @@ public class LocalFileStorageService : IFileStorageService
         string folder,
         CancellationToken ct = default)
     {
-        var uploadsRoot = Path.Combine(_env.WebRootPath, "uploads", folder);
+        var uploadsRoot = Path.Combine(
+            _env.WebRootPath,
+            "uploads",
+            folder);
+
         Directory.CreateDirectory(uploadsRoot);
 
         var uniqueFileName =
             $"{Guid.NewGuid()}{Path.GetExtension(fileName)}";
 
-        var fullPath = Path.Combine(uploadsRoot, uniqueFileName);
+        var fullPath = Path.Combine(
+            uploadsRoot,
+            uniqueFileName);
 
         using var stream = new FileStream(
             fullPath,
@@ -35,7 +41,8 @@ public class LocalFileStorageService : IFileStorageService
         await fileStream.CopyToAsync(stream, ct);
 
         // DB’de saklanacak relative path
-        return Path.Combine("uploads", folder, uniqueFileName)
+        return Path
+            .Combine("uploads", folder, uniqueFileName)
             .Replace("\\", "/");
     }
 
@@ -45,7 +52,9 @@ public class LocalFileStorageService : IFileStorageService
     {
         var fullPath = Path.Combine(
             _env.WebRootPath,
-            relativePath.Replace("/", Path.DirectorySeparatorChar.ToString()));
+            relativePath.Replace(
+                "/",
+                Path.DirectorySeparatorChar.ToString()));
 
         if (File.Exists(fullPath))
             File.Delete(fullPath);

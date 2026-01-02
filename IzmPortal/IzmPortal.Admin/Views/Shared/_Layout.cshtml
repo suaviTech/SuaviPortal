@@ -1,6 +1,4 @@
-﻿@using Microsoft.AspNetCore.Authentication
-@using Microsoft.AspNetCore.Authorization
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="utf-8" />
@@ -15,15 +13,8 @@
         <aside class="sidebar">
             <h2>IzmPortal</h2>
 
-            <a asp-controller="Home" asp-action="Index"
-               class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")">
-                Dashboard
-            </a>
-
-            <a asp-controller="ApplicationShortcuts" asp-action="Index"
-               class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "ApplicationShortcuts" ? "active" : "")">
-                Uygulama Kısayolları
-            </a>
+            @* 🔐 ROLE BAZLI MENÜ *@
+            @await Html.PartialAsync("_AdminMenu")
 
             <hr style="border-color:#444; margin:16px 0;" />
 

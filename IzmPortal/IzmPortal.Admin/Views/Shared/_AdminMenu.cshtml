@@ -1,0 +1,26 @@
+﻿@* Dashboard – herkes *@
+<a asp-controller="Home"
+   asp-action="Index"
+   class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")">
+    Dashboard
+</a>
+
+@* Uygulama Kısayolları – SuperAdmin + Manager *@
+@if (User.IsInRole("SuperAdmin") || User.IsInRole("Manager"))
+{
+    <a asp-controller="ApplicationShortcuts"
+       asp-action="Index"
+       class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "ApplicationShortcuts" ? "active" : "")">
+        Uygulama Kısayolları
+    </a>
+}
+
+@* Örnek: Sadece SuperAdmin *@
+@if (User.IsInRole("SuperAdmin"))
+{
+    <a asp-controller="Users"
+       asp-action="Index"
+       class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Users" ? "active" : "")">
+        Kullanıcı Yönetimi
+    </a>
+}

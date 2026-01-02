@@ -1,7 +1,6 @@
 ﻿using IzmPortal.Application.Abstractions.Repositories;
 using IzmPortal.Application.Abstractions.Services;
 using IzmPortal.Application.Common;
-using IzmPortal.Application.DTOs.Slider;
 using IzmPortal.Domain.Entities;
 
 namespace IzmPortal.Application.Services;
@@ -19,35 +18,45 @@ public class SliderService : ISliderService
         _fileStorageService = fileStorageService;
     }
 
-    public async Task<Result<List<SliderDto>>> GetAllAsync(CancellationToken ct = default)
+    // ✅ SERVICE ARTIK ENTITY DÖNDÜRÜR
+    public async Task<Result<List<Slider>>> GetAllAsync(
+        CancellationToken ct = default)
     {
         var sliders = await _sliderRepository.GetAllAsync(ct);
 
-        var list = sliders.Select(x => new SliderDto
-        {
-            Id = x.Id,
-            ImageUrl = x.ImagePath
-        }).ToList();
-
-        return Result<List<SliderDto>>.Success(list);
+        return Result<List<Slider>>.Success(sliders);
     }
 
-    public async Task<Result> CreateAsync(string imagePath, CancellationToken ct = default)
+    public async Task<Result> CreateAsync(
+        string imagePath,
+        CancellationToken ct = default)
     {
         var slider = new Slider(imagePath);
+
         await _sliderRepository.AddAsync(slider, ct);
+
         return Result.Success("Slider eklendi.");
     }
 
-    public async Task<Result> DeleteAsync(Guid id, CancellationToken ct = default)
+    public async Task<Result> DeleteAsync(
+        Guid id,
+        CancellationToken ct = default)
     {
         var slider = await _sliderRepository.GetByIdAsync(id, ct);
+
         if (slider is null)
-            return Result.Failure("Slider bulunamadı.");
+            return Result.Failure(
+                "Slider bulunamadı.",
+                "ERR_NOT_FOUND");
 
         // 🔥 HARD DELETE (dosya + DB)
-        await _fileStorageService.DeleteAsync(slider.ImagePath, ct);
-        await _sliderRepository.DeleteAsync(slider, ct);
+        await _fileStorageService.DeleteAsync(
+            slider.ImagePath,
+            ct);
+
+        await _sliderRepository.DeleteAsync(
+            slider,
+            ct);
 
         return Result.Success("Slider silindi.");
     }

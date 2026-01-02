@@ -34,7 +34,7 @@ public class MenuDocumentService : IMenuDocumentService
             {
                 Id = x.Id,
                 Title = x.Title,
-                FilePath = x.FilePath,
+                FileUrl = x.FilePath,
                 CreatedAt = x.CreatedAt
             })
             .ToList();

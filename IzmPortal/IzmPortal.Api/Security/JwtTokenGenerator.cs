@@ -18,14 +18,14 @@ public class JwtTokenGenerator
     public string GenerateToken(ApplicationUser user, IList<string> roles)
     {
         var claims = new List<Claim>
-        {
-            // 🔑 KRİTİK SATIRLAR
-        new Claim(ClaimTypes.NameIdentifier, user.UserName!),
+    {
+        // 🔥 MUTLAKA user.Id OLMALI
+        new Claim(ClaimTypes.NameIdentifier, user.Id),
         new Claim(ClaimTypes.Name, user.UserName!),
 
         new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
         new Claim("force_password_change", user.ForcePasswordChange.ToString().ToLower())
-        };
+    };
 
         foreach (var role in roles)
             claims.Add(new Claim(ClaimTypes.Role, role));
@@ -38,7 +38,7 @@ public class JwtTokenGenerator
             issuer: _config["Jwt:Issuer"],
             audience: _config["Jwt:Audience"],
             claims: claims,
-            expires: DateTime.Now.AddMinutes(
+            expires: DateTime.UtcNow.AddMinutes(
                 int.Parse(_config["Jwt:ExpireMinutes"]!)
             ),
             signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
@@ -46,4 +46,5 @@ public class JwtTokenGenerator
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
+
 }
