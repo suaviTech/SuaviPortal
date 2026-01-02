@@ -1,0 +1,32 @@
+﻿@model List<IzmPortal.Application.DTOs.Slider.SliderDto>
+
+@{
+    ViewData["Title"] = "Slider Yönetimi";
+}
+
+<h2>Slider Yönetimi</h2>
+
+<a asp-action="Upload" class="btn btn-primary mb-3">
+    Yeni Slider Yükle
+</a>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px">
+    @foreach (var s in Model)
+    {
+        <div style="border:1px solid #ddd;padding:10px;border-radius:6px">
+            <img src="@s.ImageUrl"
+                 style="width:100%;height:120px;object-fit:cover;border-radius:4px" />
+
+            <form asp-action="Delete"
+                  asp-route-id="@s.Id"
+                  method="post"
+                  onsubmit="return confirm('Silinsin mi?');"
+                  class="mt-2 text-center">
+                <button class="btn btn-danger btn-sm">
+                    Sil
+                </button>
+            </form>
+        </div>
+    }
+</div>
+

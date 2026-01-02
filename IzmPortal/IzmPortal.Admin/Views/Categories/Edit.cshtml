@@ -1,0 +1,18 @@
+﻿@model IzmPortal.Application.DTOs.Category.UpdateCategoryDto
+@{
+    ViewData["Title"] = "Kategori Düzenle";
+}
+
+<h2>Kategori Düzenle</h2>
+
+<form method="post">
+    <input type="hidden" asp-for="Id" />
+
+    <label>Kategori Adı</label>
+    <input asp-for="Name" required />
+
+    <div class="mt-3">
+        <button type="submit" class="btn btn-primary">Güncelle</button>
+        <a asp-action="Index" class="btn btn-secondary">İptal</a>
+    </div>
+</form>

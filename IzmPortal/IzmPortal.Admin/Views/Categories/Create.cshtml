@@ -1,0 +1,16 @@
+﻿@model IzmPortal.Application.DTOs.Category.CreateCategoryDto
+@{
+    ViewData["Title"] = "Yeni Kategori";
+}
+
+<h2>Yeni Kategori</h2>
+
+<form method="post">
+    <label>Kategori Adı</label>
+    <input asp-for="Name" required />
+
+    <div class="mt-3">
+        <button type="submit" class="btn btn-primary">Kaydet</button>
+        <a asp-action="Index" class="btn btn-secondary">İptal</a>
+    </div>
+</form>

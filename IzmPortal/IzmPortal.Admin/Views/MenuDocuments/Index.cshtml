@@ -1,0 +1,56 @@
+﻿@model List<IzmPortal.Application.DTOs.Menu.MenuDocumentDto>
+
+@{
+    ViewData["Title"] = "Menü Dokümanları";
+    var subMenuId = (Guid)ViewBag.SubMenuId;
+}
+
+<h2>Menü Dokümanları</h2>
+
+<a asp-action="Upload"
+   asp-route-subMenuId="@subMenuId"
+   class="btn btn-primary mb-3">
+    Yeni PDF Yükle
+</a>
+
+<table>
+    <thead>
+        <tr>
+            <th>Başlık</th>
+            <th>Dosya</th>
+            <th>Tarih</th>
+            <th style="width:160px">İşlemler</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var d in Model)
+        {
+            <tr>
+                <td>@d.Title</td>
+                <td>
+                    <a href="@d.FilePath" target="_blank">
+                        PDF Aç
+                    </a>
+                </td>
+                <td>@d.CreatedAt.ToString("dd.MM.yyyy")</td>
+                <td class="text-center">
+                    <form asp-action="Delete"
+                          asp-route-id="@d.Id"
+                          asp-route-subMenuId="@subMenuId"
+                          method="post"
+                          onsubmit="return confirm('Silinsin mi?');">
+                        <button class="btn btn-danger">Sil</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<a asp-controller="SubMenus"
+   asp-action="Index"
+   asp-route-menuId="@subMenuId"
+   class="btn btn-secondary mt-3">
+    ← Alt Menüye Dön
+</a>
+

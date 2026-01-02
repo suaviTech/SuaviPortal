@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="IzmPortal.Admin/IzmPortal.Admin.csproj" Id="2baf420f-d3bb-4ae9-98b0-4d8fd24a5642" />
   <Project Path="IzmPortal.Api/IzmPortal.Api.csproj" />
   <Project Path="IzmPortal.Application/IzmPortal.Application.csproj" />
   <Project Path="IzmPortal.Domain/IzmPortal.Domain.csproj" />

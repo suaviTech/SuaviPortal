@@ -1,0 +1,62 @@
+﻿@model List<IzmPortal.Application.DTOs.ApplicationShortcut.ApplicationShortcutAdminDto>
+@{
+    ViewData["Title"] = "Uygulama Kısayolları";
+}
+
+<h2>Uygulama Kısayolları</h2>
+
+<a class="btn btn-primary mb-3" asp-action="Create">Yeni Kısayol</a>
+
+<table>
+    <thead>
+        <tr>
+            <th style="width:60px">Icon</th>
+            <th>Başlık</th>
+            <th>URL</th>
+            <th style="width:90px">Durum</th>
+            <th style="width:240px">İşlemler</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var i in Model)
+        {
+            <tr>
+                <td class="text-center"><i class="@i.Icon"></i></td>
+                <td>@i.Title</td>
+                <td><small>@i.Url</small></td>
+                <td class="text-center">
+                    @if (i.IsActive)
+                    {
+                        <span class="badge badge-success">Aktif</span>
+                    }
+                    else
+                    {
+
+                        <span class="badge badge-secondary">Pasif</span>
+                    }
+                </td>
+                <td class="text-center">
+                    <a class="btn btn-warning" asp-action="Edit" asp-route-id="@i.Id">Düzenle</a>
+
+                    @if (i.IsActive)
+                    {
+                        <form asp-action="Deactivate" asp-route-id="@i.Id" method="post" class="d-inline">
+                            <button class="btn btn-secondary">Pasif</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <form asp-action="Activate" asp-route-id="@i.Id" method="post" class="d-inline">
+                            <button class="btn btn-success">Aktif</button>
+                        </form>
+                    }
+
+                    <form asp-action="Delete" asp-route-id="@i.Id" method="post"
+                          class="d-inline" onsubmit="return confirm('Silinsin mi?');">
+                        <button class="btn btn-danger">Sil</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

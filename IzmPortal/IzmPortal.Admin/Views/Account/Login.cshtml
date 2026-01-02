@@ -1,0 +1,25 @@
+﻿@{
+    ViewData["Title"] = "Admin Giriş";
+}
+
+<div class="login-wrapper">
+    <div class="login-card">
+        <h1>IzmPortal Admin</h1>
+
+        @if (ViewBag.Error != null)
+        {
+            <div class="error">@ViewBag.Error</div>
+        }
+
+        <form method="post">
+            <label>E-posta</label>
+            <input type="email" name="email" required />
+
+            <label>Şifre</label>
+            <input type="password" name="password" required />
+
+            <button type="submit">Giriş Yap</button>
+        </form>
+    </div>
+</div>
+

@@ -1,0 +1,44 @@
+﻿@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authorization
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewData["Title"] - IzmPortal Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="stylesheet" href="~/site.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <h2>IzmPortal</h2>
+
+            <a asp-controller="Home" asp-action="Index"
+               class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")">
+                Dashboard
+            </a>
+
+            <a asp-controller="ApplicationShortcuts" asp-action="Index"
+               class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "ApplicationShortcuts" ? "active" : "")">
+                Uygulama Kısayolları
+            </a>
+
+            <hr style="border-color:#444; margin:16px 0;" />
+
+            <a asp-controller="Account" asp-action="Logout">
+                Çıkış
+            </a>
+        </aside>
+
+        <!-- CONTENT -->
+        <main class="content">
+            @RenderBody()
+        </main>
+    </div>
+
+    <script src="~/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
