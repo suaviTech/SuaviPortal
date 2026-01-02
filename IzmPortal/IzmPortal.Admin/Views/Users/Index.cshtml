@@ -1,0 +1,113 @@
+﻿@model List<IzmPortal.Admin.ViewModels.Users.UserAdminVm>
+
+@{
+    ViewData["Title"] = "Kullanıcılar";
+    var currentUser = User.Identity?.Name;
+}
+
+<h2 class="mb-3">Kullanıcılar</h2>
+
+<table class="table table-sm table-striped align-middle">
+    <thead class="table-light">
+        <tr>
+            <th>Kullanıcı</th>
+            <th>Email</th>
+            <th>Roller</th>
+            <th>Durum</th>
+            <th class="text-end">İşlemler</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var u in Model)
+        {
+            var isSelf = u.UserName == currentUser;
+
+            <tr>
+                <td class="fw-semibold">@u.UserName</td>
+                <td class="text-muted">@u.Email</td>
+
+                <td>
+                    @foreach (var role in u.Roles)
+                    {
+                        <span class="badge bg-secondary me-1">@role</span>
+                    }
+                </td>
+
+                <td>
+                    @if (u.IsActive)
+                    {
+                        <span class="badge bg-success">Aktif</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-danger">Pasif</span>
+                    }
+                </td>
+
+                <td class="text-end">
+
+                    <!-- AKTİF / PASİF -->
+                    <form asp-action="@(u.IsActive ? "Deactivate" : "Activate")"
+                          method="post"
+                          class="d-inline"
+                          onsubmit="return confirm('Bu işlemi onaylıyor musunuz?')">
+                        <input type="hidden" name="id" value="@u.Id" />
+                        <button class="btn btn-sm btn-outline-secondary"
+                                @(isSelf ? "disabled" : "")>
+                            @(u.IsActive ? "Pasif Yap" : "Aktif Yap")
+                        </button>
+                    </form>
+
+                    <!-- RESET PASSWORD -->
+                    <form asp-action="ResetPassword"
+                          method="post"
+                          class="d-inline ms-1"
+                          onsubmit="return confirm('Şifre resetlensin mi?')">
+                        <input type="hidden" name="id" value="@u.Id" />
+                        <button class="btn btn-sm btn-outline-warning"
+                                @(isSelf ? "disabled" : "")>
+                            Şifre Reset
+                        </button>
+                    </form>
+
+                    <!-- CHANGE ROLE -->
+                    <form asp-action="ChangeRole"
+                          method="post"
+                          class="d-inline ms-1">
+                        <input type="hidden" name="id" value="@u.Id" />
+
+                        <select name="role"
+                                class="form-select form-select-sm d-inline w-auto"
+                                onchange="this.form.submit()"
+                                @(isSelf ? "disabled" : "")>
+                            <option disabled>Rol Seç</option>
+
+                            <option value="SuperAdmin"
+                                    selected="@u.Roles.Contains("SuperAdmin")">
+                                SuperAdmin
+                            </option>
+
+                            <option value="Manager"
+                                    selected="@u.Roles.Contains("Manager")">
+                                Manager
+                            </option>
+
+                            <option value="User"
+                                    selected="@u.Roles.Contains("User")">
+                                User
+                            </option>
+                        </select>
+                    </form>
+
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">
+        Henüz kullanıcı bulunmuyor.
+    </div>
+}

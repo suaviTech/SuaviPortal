@@ -2,18 +2,15 @@
 using IzmPortal.Api.Security;
 using IzmPortal.Infrastructure.Identity;
 using IzmPortal.Infrastructure.Persistence;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
-using System.Text.RegularExpressions;
 
 namespace IzmPortal.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/auth")]
 public class AuthController : ControllerBase
 {
     private readonly UserManager<ApplicationUser> _userManager;
@@ -30,47 +27,58 @@ public class AuthController : ControllerBase
         _jwt = jwt;
     }
 
+    // --------------------
+    // LOGIN
+    // --------------------
     [HttpPost("login")]
     public async Task<IActionResult> Login(LoginRequest request)
     {
-        // 1️⃣ Identity’de var mı?
+        if (string.IsNullOrWhiteSpace(request.Email)
+            || string.IsNullOrWhiteSpace(request.Password))
+            return BadRequest("Email ve şifre zorunludur.");
+
         var user = await _userManager.FindByNameAsync(request.Email);
 
-        if (user is null)
+        // 🔍 Identity’de yoksa → PersonalDB’den oluştur
+        if (user == null)
         {
-            // 2️⃣ PersonalDB lookup
             var person = await _personalDb.Tbl_Personal
+                .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Username == request.Email);
 
-            if (person is null)
+            if (person == null)
                 return Unauthorized("Kullanıcı bulunamadı.");
 
-            // 3️⃣ Identity user oluştur
             user = new ApplicationUser
             {
                 UserName = person.Username,
                 Email = person.Username,
                 TcNumber = person.TcNumber,
-                ForcePasswordChange = true,
-                EmailConfirmed = true
+                ForcePasswordChange = true
             };
 
             var initialPassword = person.TcNumber[^4..];
 
-            var createResult = await _userManager.CreateAsync(user, initialPassword);
+            var createResult =
+                await _userManager.CreateAsync(user, initialPassword);
+
             if (!createResult.Succeeded)
                 return BadRequest(createResult.Errors);
 
+            // varsayılan rol
             await _userManager.AddToRoleAsync(user, "Manager");
         }
 
-        // 4️⃣ Şifre kontrolü
+        // 🔐 Şifre kontrolü
         if (!await _userManager.CheckPasswordAsync(user, request.Password))
             return Unauthorized("Hatalı şifre.");
 
-        // 5️⃣ JWT üret
         var roles = await _userManager.GetRolesAsync(user);
-        var token = _jwt.GenerateToken(user, roles);
+
+        var token = _jwt.GenerateToken(
+            user,
+            roles,
+            user.ForcePasswordChange);
 
         return Ok(new LoginResponse
         {
@@ -79,13 +87,17 @@ public class AuthController : ControllerBase
         });
     }
 
-
-
-
+    // --------------------
+    // CHANGE PASSWORD
+    // --------------------
     [Authorize(Policy = "AdminAccess")]
     [HttpPost("change-password")]
     public async Task<IActionResult> ChangePassword(ChangePasswordRequest request)
     {
+        if (string.IsNullOrWhiteSpace(request.CurrentPassword)
+            || string.IsNullOrWhiteSpace(request.NewPassword))
+            return BadRequest("Şifre alanları zorunludur.");
+
         var userName = User.Identity!.Name!;
         var user = await _userManager.FindByNameAsync(userName);
 
@@ -95,21 +107,15 @@ public class AuthController : ControllerBase
         var result = await _userManager.ChangePasswordAsync(
             user,
             request.CurrentPassword,
-            request.NewPassword
-        );
+            request.NewPassword);
 
         if (!result.Succeeded)
             return BadRequest(result.Errors);
 
+        // 🔓 Force password change kaldır
         user.ForcePasswordChange = false;
         await _userManager.UpdateAsync(user);
 
         return Ok("Şifre başarıyla değiştirildi.");
     }
-
-
-
-
-
 }
-

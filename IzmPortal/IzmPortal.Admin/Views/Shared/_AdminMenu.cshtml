@@ -1,7 +1,11 @@
-﻿@* Dashboard – herkes *@
+﻿@{
+    var current = ViewContext.RouteData.Values["controller"]?.ToString();
+}
+
+@* Dashboard – herkes *@
 <a asp-controller="Home"
    asp-action="Index"
-   class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")">
+   class="@(current == "Home" ? "active" : "")">
     Dashboard
 </a>
 
@@ -10,17 +14,23 @@
 {
     <a asp-controller="ApplicationShortcuts"
        asp-action="Index"
-       class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "ApplicationShortcuts" ? "active" : "")">
+       class="@(current == "ApplicationShortcuts" ? "active" : "")">
         Uygulama Kısayolları
     </a>
 }
 
-@* Örnek: Sadece SuperAdmin *@
+@* Kullanıcı Yönetimi – sadece SuperAdmin *@
 @if (User.IsInRole("SuperAdmin"))
 {
     <a asp-controller="Users"
        asp-action="Index"
-       class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Users" ? "active" : "")">
+       class="@(current == "Users" ? "active" : "")">
         Kullanıcı Yönetimi
+    </a>
+
+    <a asp-controller="AuditLogs"
+       asp-action="Index"
+       class="@(current == "AuditLogs" ? "active" : "")">
+        Audit Logları
     </a>
 }

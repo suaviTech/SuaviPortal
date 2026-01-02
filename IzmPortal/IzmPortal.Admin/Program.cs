@@ -21,9 +21,11 @@ builder.Services.AddTransient<ApiAuthHandler>();
 // 🌐 API Client (JWT otomatik gider)
 builder.Services.AddHttpClient("ApiClient", client =>
 {
-    client.BaseAddress = new Uri(apiBaseUrl);
+    client.BaseAddress = new Uri("https://localhost:7292");
+    // 🔴 BURAYA API PORTUNU YAZ
 })
 .AddHttpMessageHandler<ApiAuthHandler>();
+builder.Services.AddScoped<ApiAuthHandler>();
 
 // 🍪 Cookie Authentication
 builder.Services
@@ -50,6 +52,10 @@ app.UseAuthorization();
 
 
 // Routes
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}");
+
 app.MapDefaultControllerRoute();
 
 app.Run();

@@ -16,11 +16,12 @@ public class ApplicationShortcutsController : ControllerBase
         _service = service;
     }
 
-    // --------------------------------------------------
+    // hookup --------------------------------------------------
     // PUBLIC
     // --------------------------------------------------
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<IActionResult> GetPublic()
     {
         var items = await _service.GetPublicAsync();
@@ -31,51 +32,72 @@ public class ApplicationShortcutsController : ControllerBase
     // ADMIN
     // --------------------------------------------------
 
-    [Authorize(Policy = "AdminAccess")]
     [HttpGet("admin")]
+    [Authorize(Policy = "AdminAccess")]
     public async Task<IActionResult> GetAdmin()
     {
         var items = await _service.GetAdminAsync();
         return Ok(items);
     }
 
+    [HttpGet("admin/{id:guid}")]
     [Authorize(Policy = "AdminAccess")]
+    public async Task<IActionResult> GetAdminById(Guid id)
+    {
+        var item = await _service.GetAdminByIdAsync(id);
+
+        if (item == null)
+            return NotFound();
+
+        return Ok(item);
+    }
+
     [HttpPost]
-    public async Task<IActionResult> Create(CreateUpdateApplicationShortcutDto dto)
+    [Authorize(Policy = "AdminAccess")]
+    public async Task<IActionResult> Create(
+        [FromBody] CreateUpdateApplicationShortcutDto dto)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
         await _service.CreateAsync(dto);
-        return Ok();
+        return Ok("Uygulama kısayolu oluşturuldu.");
     }
 
-    [Authorize(Policy = "AdminAccess")]
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> Update(Guid id, CreateUpdateApplicationShortcutDto dto)
+    [Authorize(Policy = "AdminAccess")]
+    public async Task<IActionResult> Update(
+        Guid id,
+        [FromBody] CreateUpdateApplicationShortcutDto dto)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
         await _service.UpdateAsync(id, dto);
-        return NoContent();
+        return Ok("Uygulama kısayolu güncellendi.");
     }
 
-    [Authorize(Policy = "AdminAccess")]
     [HttpPut("{id:guid}/activate")]
+    [Authorize(Policy = "AdminAccess")]
     public async Task<IActionResult> Activate(Guid id)
     {
         await _service.ActivateAsync(id);
-        return NoContent();
+        return Ok("Uygulama kısayolu aktifleştirildi.");
     }
 
-    [Authorize(Policy = "AdminAccess")]
     [HttpPut("{id:guid}/deactivate")]
+    [Authorize(Policy = "AdminAccess")]
     public async Task<IActionResult> Deactivate(Guid id)
     {
         await _service.DeactivateAsync(id);
-        return NoContent();
+        return Ok("Uygulama kısayolu pasifleştirildi.");
     }
 
-    [Authorize(Policy = "AdminAccess")]
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = "AdminAccess")]
     public async Task<IActionResult> Delete(Guid id)
     {
         await _service.DeleteAsync(id);
-        return NoContent();
+        return Ok("Uygulama kısayolu silindi.");
     }
 }

@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace IzmPortal.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/menu-documents")]
 public class MenuDocumentsController : ControllerBase
 {
     private readonly IMenuDocumentService _menuDocumentService;
@@ -16,8 +16,10 @@ public class MenuDocumentsController : ControllerBase
         _menuDocumentService = menuDocumentService;
     }
 
-    // 🔓 Public + Admin
-    // Alt menüye bağlı PDF listesi
+    // --------------------
+    // PUBLIC + ADMIN
+    // SUBMENU'YA GÖRE PDF LİSTESİ
+    // --------------------
     [HttpGet("by-submenu/{subMenuId:guid}")]
     [AllowAnonymous]
     public async Task<IActionResult> GetBySubMenu(
@@ -30,8 +32,10 @@ public class MenuDocumentsController : ControllerBase
         return Ok(result.Data);
     }
 
-    // 🔐 Admin
-    // PDF Upload
+    // --------------------
+    // ADMIN
+    // PDF UPLOAD
+    // --------------------
     [HttpPost]
     [Authorize(Policy = "AdminAccess")]
     public async Task<IActionResult> Upload(
@@ -56,8 +60,10 @@ public class MenuDocumentsController : ControllerBase
         return Ok(result.Message);
     }
 
-    // 🔐 Admin
-    // PDF Hard Delete
+    // --------------------
+    // ADMIN
+    // PDF HARD DELETE
+    // --------------------
     [HttpDelete("{id:guid}")]
     [Authorize(Policy = "AdminAccess")]
     public async Task<IActionResult> Delete(
@@ -72,4 +78,3 @@ public class MenuDocumentsController : ControllerBase
         return Ok(result.Message);
     }
 }
-

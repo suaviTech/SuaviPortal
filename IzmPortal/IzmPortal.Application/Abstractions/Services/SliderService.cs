@@ -2,6 +2,7 @@
 using IzmPortal.Application.Abstractions.Services;
 using IzmPortal.Application.Common;
 using IzmPortal.Domain.Entities;
+using IzmPortal.Domain.Enums;
 
 namespace IzmPortal.Application.Services;
 
@@ -9,16 +10,21 @@ public class SliderService : ISliderService
 {
     private readonly ISliderRepository _sliderRepository;
     private readonly IFileStorageService _fileStorageService;
+    private readonly IAuditService _auditService;
 
     public SliderService(
         ISliderRepository sliderRepository,
-        IFileStorageService fileStorageService)
+        IFileStorageService fileStorageService,
+        IAuditService auditService)
     {
         _sliderRepository = sliderRepository;
         _fileStorageService = fileStorageService;
+        _auditService = auditService;
     }
 
-    // ✅ SERVICE ARTIK ENTITY DÖNDÜRÜR
+    // --------------------
+    // GET ALL (PUBLIC)
+    // --------------------
     public async Task<Result<List<Slider>>> GetAllAsync(
         CancellationToken ct = default)
     {
@@ -27,6 +33,9 @@ public class SliderService : ISliderService
         return Result<List<Slider>>.Success(sliders);
     }
 
+    // --------------------
+    // CREATE
+    // --------------------
     public async Task<Result> CreateAsync(
         string imagePath,
         CancellationToken ct = default)
@@ -35,9 +44,17 @@ public class SliderService : ISliderService
 
         await _sliderRepository.AddAsync(slider, ct);
 
+        await _auditService.LogAsync(
+            AuditAction.Create,
+            AuditEntity.Slider,
+            slider.Id.ToString());
+
         return Result.Success("Slider eklendi.");
     }
 
+    // --------------------
+    // DELETE (HARD)
+    // --------------------
     public async Task<Result> DeleteAsync(
         Guid id,
         CancellationToken ct = default)
@@ -57,6 +74,11 @@ public class SliderService : ISliderService
         await _sliderRepository.DeleteAsync(
             slider,
             ct);
+
+        await _auditService.LogAsync(
+            AuditAction.Delete,
+            AuditEntity.Slider,
+            id.ToString());
 
         return Result.Success("Slider silindi.");
     }

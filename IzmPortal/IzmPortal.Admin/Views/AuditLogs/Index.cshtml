@@ -1,0 +1,59 @@
+﻿@model List<IzmPortal.Admin.ViewModels.AuditLogVm>
+
+@{
+    ViewData["Title"] = "Audit Logları";
+}
+
+<h2 class="mb-3">Audit Logları</h2>
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-md-3">
+        <label class="form-label">Başlangıç</label>
+        <input type="date" name="from" class="form-control" value="@ViewBag.From" />
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">Bitiş</label>
+        <input type="date" name="to" class="form-control" value="@ViewBag.To" />
+    </div>
+    <div class="col-md-3 align-self-end">
+        <button class="btn btn-primary">Filtrele</button>
+        <a asp-action="Index" class="btn btn-outline-secondary ms-2">Temizle</a>
+    </div>
+</form>
+
+<div class="table-responsive">
+    <table class="table table-sm table-striped align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Tarih</th>
+                <th>Kullanıcı</th>
+                <th>İşlem</th>
+                <th>Entity</th>
+                <th>EntityId</th>
+                <th>IP</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (!Model.Any())
+            {
+                <tr>
+                    <td colspan="6" class="text-center text-muted">Kayıt bulunamadı</td>
+                </tr>
+            }
+            else
+            {
+                foreach (var x in Model)
+                {
+                    <tr>
+                        <td>@x.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
+                        <td>@x.UserName</td>
+                        <td><span class="badge bg-secondary">@x.Action</span></td>
+                        <td>@x.EntityName</td>
+                        <td class="text-muted">@x.EntityId</td>
+                        <td>@x.IpAddress</td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>

@@ -3,6 +3,7 @@ using IzmPortal.Application.Abstractions.Services;
 using IzmPortal.Application.Common;
 using IzmPortal.Application.DTOs.Menu;
 using IzmPortal.Domain.Entities;
+using IzmPortal.Domain.Enums;
 
 namespace IzmPortal.Application.Services;
 
@@ -11,15 +12,18 @@ public class MenuDocumentService : IMenuDocumentService
     private readonly IMenuDocumentRepository _documentRepository;
     private readonly ISubMenuRepository _subMenuRepository;
     private readonly IFileStorageService _fileStorageService;
+    private readonly IAuditService _auditService;
 
     public MenuDocumentService(
         IMenuDocumentRepository documentRepository,
         ISubMenuRepository subMenuRepository,
-        IFileStorageService fileStorageService)
+        IFileStorageService fileStorageService,
+        IAuditService auditService)
     {
         _documentRepository = documentRepository;
         _subMenuRepository = subMenuRepository;
         _fileStorageService = fileStorageService;
+        _auditService = auditService;
     }
 
     public async Task<Result<List<MenuDocumentDto>>> GetBySubMenuIdAsync(
@@ -43,11 +47,11 @@ public class MenuDocumentService : IMenuDocumentService
     }
 
     public async Task<Result> UploadAsync(
-     Guid subMenuId,
-     string title,
-     Stream fileStream,
-     string fileName,
-     CancellationToken ct = default)
+        Guid subMenuId,
+        string title,
+        Stream fileStream,
+        string fileName,
+        CancellationToken ct = default)
     {
         var subMenu = await _subMenuRepository.GetByIdAsync(subMenuId, ct);
         if (subMenu is null)
@@ -66,9 +70,13 @@ public class MenuDocumentService : IMenuDocumentService
 
         await _documentRepository.AddAsync(document, ct);
 
+        await _auditService.LogAsync(
+            AuditAction.Create,
+            AuditEntity.MenuDocument,
+            document.Id.ToString());
+
         return Result.Success("Doküman yüklendi.");
     }
-
 
     public async Task<Result> DeleteAsync(
         Guid id,
@@ -82,7 +90,11 @@ public class MenuDocumentService : IMenuDocumentService
         await _fileStorageService.DeleteAsync(document.FilePath, ct);
         await _documentRepository.DeleteAsync(document, ct);
 
+        await _auditService.LogAsync(
+            AuditAction.Delete,
+            AuditEntity.MenuDocument,
+            id.ToString());
+
         return Result.Success("Doküman silindi.");
     }
 }
-

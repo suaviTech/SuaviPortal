@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Net.Http.Headers;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
@@ -21,11 +22,8 @@ public class ApiAuthHandler : DelegatingHandler
     {
         var context = _httpContextAccessor.HttpContext;
 
-        // 🔐 JWT'yi cookie'den al
-        var token = context?
-            .User?
-            .FindFirst("access_token")?
-            .Value;
+        // 🔐 Cookie içindeki JWT’yi al
+        var token = context?.User?.FindFirst("access_token")?.Value;
 
         if (!string.IsNullOrEmpty(token))
         {
@@ -35,17 +33,7 @@ public class ApiAuthHandler : DelegatingHandler
 
         var response = await base.SendAsync(request, cancellationToken);
 
-        // 🚨 TOKEN GEÇERSİZ / SÜRESİ DOLMUŞ
-        if (response.StatusCode == HttpStatusCode.Unauthorized && context != null)
-        {
-            // Cookie temizle
-            await context.SignOutAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme);
-
-            // Login'e yönlendir
-            context.Response.Redirect("/Account/Login");
-        }
-
+        // ❗ SADECE STATUS CODE DÖN
         return response;
     }
 }

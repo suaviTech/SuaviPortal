@@ -2,21 +2,21 @@
 using IzmPortal.Application.Abstractions.Services;
 using IzmPortal.Application.DTOs.ApplicationShortcut;
 using IzmPortal.Domain.Entities;
+using IzmPortal.Domain.Enums;
 
-
-
-namespace IzmPortal.Application.Abstractions.Services;
+namespace IzmPortal.Application.Services;
 
 public class ApplicationShortcutService : IApplicationShortcutService
 {
     private readonly IApplicationShortcutRepository _repository;
-   
+    private readonly IAuditService _auditService;
 
     public ApplicationShortcutService(
-        IApplicationShortcutRepository repository)
+        IApplicationShortcutRepository repository,
+        IAuditService auditService)
     {
         _repository = repository;
-   
+        _auditService = auditService;
     }
 
     // --------------------------------------------------
@@ -72,6 +72,11 @@ public class ApplicationShortcutService : IApplicationShortcutService
 
         await _repository.AddAsync(entity);
         await _repository.SaveChangesAsync();
+
+        await _auditService.LogAsync(
+            AuditAction.Create,
+            AuditEntity.ApplicationShortcut,
+            entity.Id.ToString());
     }
 
     public async Task UpdateAsync(Guid id, CreateUpdateApplicationShortcutDto dto)
@@ -88,6 +93,11 @@ public class ApplicationShortcutService : IApplicationShortcutService
 
         _repository.Update(entity);
         await _repository.SaveChangesAsync();
+
+        await _auditService.LogAsync(
+            AuditAction.Update,
+            AuditEntity.ApplicationShortcut,
+            id.ToString());
     }
 
     public async Task ActivateAsync(Guid id)
@@ -98,6 +108,11 @@ public class ApplicationShortcutService : IApplicationShortcutService
 
         entity.IsActive = true;
         await _repository.SaveChangesAsync();
+
+        await _auditService.LogAsync(
+            AuditAction.Activate,
+            AuditEntity.ApplicationShortcut,
+            id.ToString());
     }
 
     public async Task DeactivateAsync(Guid id)
@@ -108,6 +123,11 @@ public class ApplicationShortcutService : IApplicationShortcutService
 
         entity.IsActive = false;
         await _repository.SaveChangesAsync();
+
+        await _auditService.LogAsync(
+            AuditAction.Deactivate,
+            AuditEntity.ApplicationShortcut,
+            id.ToString());
     }
 
     public async Task DeleteAsync(Guid id)
@@ -118,7 +138,29 @@ public class ApplicationShortcutService : IApplicationShortcutService
 
         _repository.Delete(entity);
         await _repository.SaveChangesAsync();
+
+        await _auditService.LogAsync(
+            AuditAction.Delete,
+            AuditEntity.ApplicationShortcut,
+            id.ToString());
     }
 
+    public async Task<ApplicationShortcutAdminDto?> GetAdminByIdAsync(Guid id)
+    {
+        var entity = await _repository.GetByIdAsync(id);
 
+        if (entity == null)
+            return null;
+
+        return new ApplicationShortcutAdminDto
+        {
+            Id = entity.Id,
+            Title = entity.Title,
+            Icon = entity.Icon,
+            Url = entity.Url,
+            IsExternal = entity.IsExternal,
+            IsActive = entity.IsActive,
+            Order = entity.Order
+        };
+    }
 }

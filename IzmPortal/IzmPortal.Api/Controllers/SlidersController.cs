@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace IzmPortal.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/sliders")]
 public class SlidersController : ControllerBase
 {
     private readonly ISliderService _sliderService;
@@ -21,15 +21,17 @@ public class SlidersController : ControllerBase
         _fileStorageService = fileStorageService;
     }
 
-    // GET (public)
-    [AllowAnonymous]
+    // --------------------
+    // PUBLIC - GET SLIDERS
+    // --------------------
     [HttpGet]
+    [AllowAnonymous]
     public async Task<IActionResult> GetAll(CancellationToken ct)
     {
         var result = await _sliderService.GetAllAsync(ct);
 
         if (!result.Succeeded)
-            return BadRequest(result);
+            return BadRequest(result.Message);
 
         var baseUrl = $"{Request.Scheme}://{Request.Host}";
 
@@ -42,17 +44,17 @@ public class SlidersController : ControllerBase
         return Ok(list);
     }
 
-
-    // POST (admin)
-    [Authorize(Policy = "AdminAccess")]
+    // --------------------
+    // ADMIN - UPLOAD SLIDER
+    // --------------------
     [HttpPost]
+    [Authorize(Policy = "AdminAccess")]
     public async Task<IActionResult> Upload(
         IFormFile file,
         CancellationToken ct)
     {
         if (file == null || file.Length == 0)
-            return BadRequest(
-                Result.Failure("Dosya boş.", "ERR_EMPTY_FILE"));
+            return BadRequest("Dosya boş.");
 
         using var stream = file.OpenReadStream();
 
@@ -65,14 +67,16 @@ public class SlidersController : ControllerBase
         var result = await _sliderService.CreateAsync(relativePath, ct);
 
         if (!result.Succeeded)
-            return BadRequest(result);
+            return BadRequest(result.Message);
 
-        return Ok(Result.Success("Slider başarıyla yüklendi."));
+        return Ok("Slider başarıyla yüklendi.");
     }
 
-    // DELETE (admin)
-    [Authorize(Policy = "AdminAccess")]
+    // --------------------
+    // ADMIN - DELETE SLIDER
+    // --------------------
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = "AdminAccess")]
     public async Task<IActionResult> Delete(
         Guid id,
         CancellationToken ct)
@@ -80,8 +84,8 @@ public class SlidersController : ControllerBase
         var result = await _sliderService.DeleteAsync(id, ct);
 
         if (!result.Succeeded)
-            return BadRequest(result);
+            return BadRequest(result.Message);
 
-        return Ok(Result.Success("Slider silindi."));
+        return Ok("Slider silindi.");
     }
 }

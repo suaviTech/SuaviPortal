@@ -26,4 +26,18 @@ public class ForcePasswordChangeFilter : IAuthorizationFilter
             context.Result = new ForbidResult();
         }
     }
+    public void OnActionExecuting(ActionExecutingContext context)
+    {
+        var path = context.HttpContext.Request.Path.Value;
+
+        if (path != null &&
+            (path.StartsWith("/Account/Login")
+            || path.StartsWith("/Account/AccessDenied")))
+        {
+            return; // 🔴 login ve access denied'e dokunma
+        }
+
+        // mevcut force password change logic
+    }
+
 }

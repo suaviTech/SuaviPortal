@@ -25,4 +25,6 @@ public interface IApplicationShortcutService
     Task DeactivateAsync(Guid id);
 
     Task DeleteAsync(Guid id);
+    Task<ApplicationShortcutAdminDto?> GetAdminByIdAsync(Guid id);
+
 }

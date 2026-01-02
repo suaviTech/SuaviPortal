@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-
-namespace IzmPortal.Admin.Middleware;
+﻿namespace IzmPortal.Admin.Middleware;
 
 public class ForcePasswordChangeMiddleware
 {
@@ -13,19 +11,18 @@ public class ForcePasswordChangeMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        if (context.User.Identity?.IsAuthenticated == true)
+        var user = context.User;
+
+        if (user.Identity?.IsAuthenticated == true)
         {
-            var forceChange = context.User
-                .Claims
-                .FirstOrDefault(c => c.Type == "force_password_change")
-                ?.Value;
+            var force = user.FindFirst("force_password_change")?.Value;
 
             var path = context.Request.Path.Value?.ToLower();
 
-            if (forceChange == "true"
-                && path != null
-                && !path.StartsWith("/account/changepassword")
-                && !path.StartsWith("/account/logout"))
+            if (force == "true" &&
+                path != null &&
+                !path.StartsWith("/account/changepassword") &&
+                !path.StartsWith("/account/logout"))
             {
                 context.Response.Redirect("/Account/ChangePassword");
                 return;
@@ -35,4 +32,3 @@ public class ForcePasswordChangeMiddleware
         await _next(context);
     }
 }
-

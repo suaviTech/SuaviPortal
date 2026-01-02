@@ -3,6 +3,7 @@ using IzmPortal.Application.Abstractions.Services;
 using IzmPortal.Application.Common;
 using IzmPortal.Application.DTOs.Menu;
 using IzmPortal.Domain.Entities;
+using IzmPortal.Domain.Enums;
 
 namespace IzmPortal.Application.Services;
 
@@ -10,13 +11,16 @@ public class SubMenuService : ISubMenuService
 {
     private readonly ISubMenuRepository _subMenuRepository;
     private readonly IMenuRepository _menuRepository;
+    private readonly IAuditService _auditService;
 
     public SubMenuService(
         ISubMenuRepository subMenuRepository,
-        IMenuRepository menuRepository)
+        IMenuRepository menuRepository,
+        IAuditService auditService)
     {
         _subMenuRepository = subMenuRepository;
         _menuRepository = menuRepository;
+        _auditService = auditService;
     }
 
     public async Task<Result<List<SubMenuDto>>> GetByMenuIdAsync(
@@ -73,6 +77,11 @@ public class SubMenuService : ISubMenuService
 
         await _subMenuRepository.AddAsync(subMenu, ct);
 
+        await _auditService.LogAsync(
+            AuditAction.Create,
+            AuditEntity.SubMenu,
+            subMenu.Id.ToString());
+
         return Result.Success("Alt menü oluşturuldu.");
     }
 
@@ -90,6 +99,11 @@ public class SubMenuService : ISubMenuService
 
         await _subMenuRepository.UpdateAsync(subMenu, ct);
 
+        await _auditService.LogAsync(
+            AuditAction.Update,
+            AuditEntity.SubMenu,
+            subMenu.Id.ToString());
+
         return Result.Success("Alt menü güncellendi.");
     }
 
@@ -104,6 +118,11 @@ public class SubMenuService : ISubMenuService
         subMenu.Activate();
         await _subMenuRepository.UpdateAsync(subMenu, ct);
 
+        await _auditService.LogAsync(
+            AuditAction.Activate,
+            AuditEntity.SubMenu,
+            subMenu.Id.ToString());
+
         return Result.Success("Alt menü aktif edildi.");
     }
 
@@ -117,6 +136,11 @@ public class SubMenuService : ISubMenuService
 
         subMenu.Deactivate();
         await _subMenuRepository.UpdateAsync(subMenu, ct);
+
+        await _auditService.LogAsync(
+            AuditAction.Deactivate,
+            AuditEntity.SubMenu,
+            subMenu.Id.ToString());
 
         return Result.Success("Alt menü pasif edildi.");
     }

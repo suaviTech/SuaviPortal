@@ -2,19 +2,17 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace IzmPortal.Infrastructure.Persistence;
-
 public static class IdentitySeed
 {
     public static async Task SeedAsync(IServiceProvider serviceProvider)
     {
         using var scope = serviceProvider.CreateScope();
 
-        var roleManager = scope.ServiceProvider
-            .GetRequiredService<RoleManager<IdentityRole>>();
+        var roleManager =
+            scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 
-        var userManager = scope.ServiceProvider
-            .GetRequiredService<UserManager<ApplicationUser>>();
+        var userManager =
+            scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
         // 1️⃣ Roller
         var roles = new[] { "SuperAdmin", "Manager" };
@@ -27,29 +25,28 @@ public static class IdentitySeed
             }
         }
 
-        // 2️⃣ İlk Admin Kullanıcı
+        // 2️⃣ Admin kullanıcı
         var adminEmail = "admin@izmportal.local";
-        var tcNumber = "44444444444";               // 🔐 TC
-        var pin = tcNumber.Substring(tcNumber.Length - 4); // 👉 4444
 
-        var adminUser = await userManager.FindByEmailAsync(adminEmail);
+        var admin = await userManager.FindByEmailAsync(adminEmail);
 
-        if (adminUser == null)
+        if (admin == null)
         {
-            adminUser = new ApplicationUser
+            admin = new ApplicationUser
             {
                 UserName = adminEmail,
                 Email = adminEmail,
-                EmailConfirmed = true,
-                TcNumber = tcNumber
+                TcNumber = "11111111111",
+                ForcePasswordChange = true
             };
 
-            var result = await userManager.CreateAsync(adminUser, pin);
+            // 🔐 İlk şifre = TC son 4
+            var result = await userManager.CreateAsync(admin, "1111");
 
-            if (result.Succeeded)
-            {
-                await userManager.AddToRoleAsync(adminUser, "SuperAdmin");
-            }
+            if (!result.Succeeded)
+                throw new Exception("Admin oluşturulamadı");
+
+            await userManager.AddToRoleAsync(admin, "SuperAdmin");
         }
     }
 }

@@ -5,9 +5,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace IzmPortal.Api.Controllers;
 
-[Authorize(Policy = "AdminAccess")]
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/categories")]
+[Authorize(Policy = "AdminAccess")]
 public class CategoriesController : ControllerBase
 {
     private readonly ICategoryService _categoryService;
@@ -17,7 +17,9 @@ public class CategoriesController : ControllerBase
         _categoryService = categoryService;
     }
 
-    // GET: api/categories
+    // --------------------
+    // GET ALL (ADMIN)
+    // --------------------
     [HttpGet]
     public async Task<IActionResult> GetAll(CancellationToken ct)
     {
@@ -25,7 +27,9 @@ public class CategoriesController : ControllerBase
         return Ok(result.Data);
     }
 
-    // GET: api/categories/{id}
+    // --------------------
+    // GET BY ID (ADMIN)
+    // --------------------
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
     {
@@ -37,27 +41,37 @@ public class CategoriesController : ControllerBase
         return Ok(result.Data);
     }
 
-    // POST: api/categories
+    // --------------------
+    // CREATE (ADMIN)
+    // --------------------
     [HttpPost]
     public async Task<IActionResult> Create(
         [FromBody] CreateCategoryDto dto,
         CancellationToken ct)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
         var result = await _categoryService.CreateAsync(dto, ct);
 
         if (!result.Succeeded)
             return BadRequest(result.Message);
 
-        return Ok(result.Message);
+        return Ok("Kategori oluşturuldu.");
     }
 
-    // PUT: api/categories/{id}
+    // --------------------
+    // UPDATE (ADMIN)
+    // --------------------
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(
         Guid id,
         [FromBody] UpdateCategoryDto dto,
         CancellationToken ct)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
         if (id != dto.Id)
             return BadRequest("Id uyuşmazlığı.");
 
@@ -66,6 +80,6 @@ public class CategoriesController : ControllerBase
         if (!result.Succeeded)
             return BadRequest(result.Message);
 
-        return Ok(result.Message);
+        return Ok("Kategori güncellendi.");
     }
 }

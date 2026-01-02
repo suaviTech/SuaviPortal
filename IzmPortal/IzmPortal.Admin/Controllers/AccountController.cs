@@ -1,9 +1,10 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text.Json;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Mvc;
 
 
 namespace IzmPortal.Admin.Controllers;
@@ -20,6 +21,7 @@ public class AccountController : Controller
     // -------------------------
     // LOGIN (GET)
     // -------------------------
+    [AllowAnonymous]
     [HttpGet]
     public IActionResult Login()
     {
@@ -29,6 +31,7 @@ public class AccountController : Controller
     // -------------------------
     // LOGIN (POST)
     // -------------------------
+    [AllowAnonymous]
     [HttpPost]
     public async Task<IActionResult> Login(string email, string password)
     {
@@ -78,6 +81,7 @@ public class AccountController : Controller
     new Claim("access_token", token)
 };
 
+
         // ROLE CLAIMLERİ
         var roleClaims = jwt.Claims
             .Where(c => c.Type == ClaimTypes.Role || c.Type == "role")
@@ -122,6 +126,7 @@ public class AccountController : Controller
     // -------------------------
     // ACCESS DENIED
     // -------------------------
+    [AllowAnonymous]
     public IActionResult AccessDenied()
     {
         return View();

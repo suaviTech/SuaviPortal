@@ -1,20 +1,39 @@
 ﻿using IzmPortal.Api.Security;
+using IzmPortal.Application.Abstractions.Services;
 using IzmPortal.Infrastructure;
+using IzmPortal.Infrastructure.Identity;
 using IzmPortal.Infrastructure.Persistence;
+using IzmPortal.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
-using System.Security.Claims;
 using System.Text;
+using IzmPortal.Application.Services;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
 // --------------------
-// Services
+// Controllers + Filters
+// --------------------
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<ForcePasswordChangeFilter>();
+});
+
+// --------------------
+// Infrastructure
 // --------------------
 builder.Services.AddInfrastructure(builder.Configuration);
 
+// --------------------
+// OpenAPI
+// --------------------
 builder.Services.AddOpenApi();
 
+// --------------------
+// Authentication (JWT)
+// --------------------
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -38,10 +57,36 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+// --------------------
+// Identity (ApplicationUser)
+// --------------------
+builder.Services
+    .AddIdentityCore<ApplicationUser>(options =>
+    {
+        options.Password.RequireDigit = true;
+        options.Password.RequireLowercase = true;
+        options.Password.RequireUppercase = true;
+        options.Password.RequireNonAlphanumeric = true;
+        options.Password.RequiredLength = 4;
+    })
+    .AddRoles<IdentityRole>()
+    .AddEntityFrameworkStores<PortalDbContext>()
+    .AddSignInManager()
+    .AddUserManager<UserManager<ApplicationUser>>();
 
 
+// --------------------
+// Application Services
+// --------------------
+builder.Services.AddScoped<IApplicationShortcutService, ApplicationShortcutService>();
+builder.Services.AddScoped<IAuditService, AuditService>();
+builder.Services.AddScoped<JwtTokenGenerator>();
 
+builder.Services.AddHttpContextAccessor();
 
+// --------------------
+// Authorization Policies
+// --------------------
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("SuperAdminOnly", policy =>
@@ -50,13 +95,6 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("AdminAccess", policy =>
         policy.RequireRole("SuperAdmin", "Manager"));
 });
-
-builder.Services.AddControllers(options =>
-{
-    options.Filters.Add<ForcePasswordChangeFilter>();
-});
-
-builder.Services.AddScoped<JwtTokenGenerator>();
 
 // --------------------
 // Build
@@ -76,7 +114,9 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// 🔥 IDENTITY SEED (DOĞRU YER)
+// --------------------
+// Identity Seed
+// --------------------
 using (var scope = app.Services.CreateScope())
 {
     await IdentitySeed.SeedAsync(scope.ServiceProvider);

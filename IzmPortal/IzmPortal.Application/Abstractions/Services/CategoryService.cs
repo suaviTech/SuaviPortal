@@ -3,6 +3,7 @@ using IzmPortal.Application.Abstractions.Services;
 using IzmPortal.Application.Common;
 using IzmPortal.Application.DTOs.Category;
 using IzmPortal.Domain.Entities;
+using IzmPortal.Domain.Enums;
 
 namespace IzmPortal.Application.Services;
 
@@ -10,13 +11,16 @@ public class CategoryService : ICategoryService
 {
     private readonly ICategoryRepository _categoryRepository;
     private readonly IAnnouncementRepository _announcementRepository;
+    private readonly IAuditService _auditService;
 
     public CategoryService(
         ICategoryRepository categoryRepository,
-        IAnnouncementRepository announcementRepository)
+        IAnnouncementRepository announcementRepository,
+        IAuditService auditService)
     {
         _categoryRepository = categoryRepository;
         _announcementRepository = announcementRepository;
+        _auditService = auditService;
     }
 
     public async Task<Result<List<CategoryDto>>> GetAllAsync(CancellationToken ct = default)
@@ -54,7 +58,13 @@ public class CategoryService : ICategoryService
     public async Task<Result> CreateAsync(CreateCategoryDto dto, CancellationToken ct = default)
     {
         var category = new Category(dto.Name);
+
         await _categoryRepository.AddAsync(category, ct);
+
+        await _auditService.LogAsync(
+            AuditAction.Create,
+            AuditEntity.Category,
+            category.Id.ToString());
 
         return Result.Success("Kategori oluşturuldu.");
     }
@@ -64,6 +74,8 @@ public class CategoryService : ICategoryService
         var category = await _categoryRepository.GetByIdAsync(dto.Id, ct);
         if (category is null)
             return Result.Failure("Kategori bulunamadı.");
+
+        var wasActive = category.IsActive;
 
         // İsim değişimi
         if (category.Name != dto.Name)
@@ -97,6 +109,29 @@ public class CategoryService : ICategoryService
         }
 
         await _categoryRepository.UpdateAsync(category, ct);
+
+        // 🔍 AUDIT KARARI
+        if (wasActive && !dto.IsActive)
+        {
+            await _auditService.LogAsync(
+                AuditAction.Deactivate,
+                AuditEntity.Category,
+                category.Id.ToString());
+        }
+        else if (!wasActive && dto.IsActive)
+        {
+            await _auditService.LogAsync(
+                AuditAction.Activate,
+                AuditEntity.Category,
+                category.Id.ToString());
+        }
+        else
+        {
+            await _auditService.LogAsync(
+                AuditAction.Update,
+                AuditEntity.Category,
+                category.Id.ToString());
+        }
 
         return Result.Success("Kategori güncellendi.");
     }
