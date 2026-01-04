@@ -1,0 +1,49 @@
+﻿@model IzmPortal.Application.DTOs.Announcement.AnnouncementDto
+
+@{
+    ViewData["Title"] = "Duyuru Önizleme";
+}
+
+<div class="card">
+    <div class="card-header">
+        Duyuru Önizleme
+    </div>
+
+    <div class="card-body">
+        <h4>@Model.Title</h4>
+
+        <div class="text-muted mb-2">
+            @Model.CategoryName ·
+            @Model.CreatedAt.ToString("dd.MM.yyyy")
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.PdfUrl))
+        {
+            <div class="mb-3">
+                <button class="btn btn-outline-secondary btn-sm"
+                        onclick="openPdfModal('@Model.PdfUrl', 'Duyuru PDF')">
+                    PDF Görüntüle
+                </button>
+            </div>
+        }
+
+        <hr />
+
+        <div>
+            @Html.Raw(Model.Content)
+        </div>
+    </div>
+
+    <div class="card-footer text-end">
+        <a asp-action="Edit"
+           asp-route-id="@Model.Id"
+           class="btn btn-warning btn-sm">
+            Düzenle
+        </a>
+
+        <a asp-action="Index"
+           class="btn btn-outline-secondary btn-sm">
+            Geri
+        </a>
+    </div>
+</div>

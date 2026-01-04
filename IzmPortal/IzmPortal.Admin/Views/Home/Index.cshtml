@@ -1,10 +1,105 @@
-﻿@{
+﻿@model IzmPortal.Admin.ViewModels.DashboardVm
+
+@{
     ViewData["Title"] = "Dashboard";
 }
 
-<h2>Admin Panel</h2>
+<div class="row mb-4">
+    <div class="col-md-12">
+        <p class="text-muted">
+            IzmPortal Yönetim Paneline hoş geldiniz.
+            Sol menüden yönetmek istediğiniz modülü seçebilirsiniz.
+        </p>
+    </div>
+</div>
 
-<p class="text-muted mt-2">
-    Sol menüden yönetmek istediğiniz modülü seçebilirsiniz.
-</p>
+<div class="row g-3">
 
+    <!-- SON İŞLEMLER -->
+    <div class="col-lg-8">
+        <div class="card h-100">
+            <div class="card-header">
+                Son İşlemler (Audit Log)
+            </div>
+
+            <div class="card-body p-0">
+                <table class="table table-sm table-striped mb-0">
+                    <thead>
+                        <tr>
+                            <th>Tarih</th>
+                            <th>Kullanıcı</th>
+                            <th>İşlem</th>
+                            <th>Entity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.RecentAudits.Any())
+                        {
+                            <tr>
+                                <td colspan="4"
+                                    class="text-center text-muted p-3">
+                                    Kayıt bulunamadı
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var log in Model.RecentAudits)
+                            {
+                                <tr>
+                                    <td>
+                                        @log.CreatedAt
+                                        .ToLocalTime()
+                                        .ToString("dd.MM.yyyy HH:mm")
+                                    </td>
+                                    <td>@log.UserName</td>
+                                    <td>
+                                        <span class="badge bg-secondary">
+                                            @log.Action
+                                        </span>
+                                    </td>
+                                    <td>@log.EntityName</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card-footer text-end">
+                <a asp-controller="AuditLogs"
+                   asp-action="Index"
+                   class="btn btn-sm btn-outline-secondary">
+                    Tüm Kayıtlar
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- BİLGİ PANELİ -->
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header">
+                Yönetim Bilgileri
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2">
+                        <strong>Modüller:</strong><br />
+                        Kullanıcılar, Duyurular, Menüler,
+                        Dokümanlar, Slider, Kategoriler
+                    </li>
+                    <li class="mb-2">
+                        <strong>Yetki:</strong><br />
+                        Sadece yetkili kullanıcılar erişebilir
+                    </li>
+                    <li>
+                        <strong>Loglama:</strong><br />
+                        Tüm işlemler audit log ile izlenir
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+</div>

@@ -1,5 +1,7 @@
 ﻿using IzmPortal.Domain.Common;
 
+namespace IzmPortal.Domain.Entities;
+
 public class Category : BaseEntity
 {
     public string Name { get; private set; } = null!;
@@ -10,6 +12,14 @@ public class Category : BaseEntity
     public Category(string name)
     {
         Name = name;
+        IsActive = true;
+        CreatedAt = DateTime.UtcNow;
+    }
+
+    public void Update(string name)
+    {
+        Name = name;
+        UpdatedAt = DateTime.UtcNow;
     }
 
     public void Activate() => IsActive = true;

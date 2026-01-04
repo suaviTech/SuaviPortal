@@ -1,0 +1,12 @@
+﻿@model (string Title, string? Subtitle)
+
+<div class="content-header">
+    <h1 class="page-title">@Model.Title</h1>
+
+    @if (!string.IsNullOrEmpty(Model.Subtitle))
+    {
+        <div class="text-muted mt-1">
+            @Model.Subtitle
+        </div>
+    }
+</div>

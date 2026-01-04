@@ -1,9 +1,9 @@
-﻿namespace IzmPortal.Application.DTOs.Menu;
+﻿namespace IzmPortal.Application.DTOs.SubMenu;
 
 public class CreateSubMenuDto
 {
-    public Guid MenuId { get; set; }
     public string Title { get; set; } = null!;
     public int Order { get; set; }
+    public Guid MenuId { get; set; }
 }
 

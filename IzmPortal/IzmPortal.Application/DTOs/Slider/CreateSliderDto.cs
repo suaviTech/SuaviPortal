@@ -2,7 +2,6 @@
 
 public class CreateSliderDto
 {
-    // API tarafında dosya alınacak
-    // ama Application katmanı ASP.NET bağımlı OLMAMALI
+    public string? Title { get; set; }
 }
 

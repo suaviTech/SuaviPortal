@@ -5,18 +5,14 @@ namespace IzmPortal.Domain.Entities;
 public class Slider : BaseEntity
 {
     public string ImagePath { get; private set; } = null!;
+    public string? Title { get; private set; }
 
-    protected Slider() { } // EF Core
+    protected Slider() { }
 
-    public Slider(string imagePath)
+    public Slider(string imagePath, string? title)
     {
         ImagePath = imagePath;
+        Title = title;
         CreatedAt = DateTime.UtcNow;
-    }
-
-    public void UpdateImage(string imagePath)
-    {
-        ImagePath = imagePath;
-        UpdatedAt = DateTime.UtcNow;
     }
 }

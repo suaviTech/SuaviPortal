@@ -1,40 +1,55 @@
-﻿using IzmPortal.Application.DTOs.Menu;
+﻿using IzmPortal.Admin.Extensions;
+using IzmPortal.Application.DTOs.SubMenu;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IzmPortal.Admin.Controllers;
 
 [Authorize]
-public class SubMenusController : Controller
+public class SubMenusController : BaseAdminController
 {
-    private readonly HttpClient _api;
-
     public SubMenusController(IHttpClientFactory factory)
+        : base(factory)
     {
-        _api = factory.CreateClient("ApiClient");
     }
 
+    // --------------------------------------------------
     // LIST
     // /SubMenus?menuId=xxx
+    // --------------------------------------------------
     public async Task<IActionResult> Index(Guid menuId, CancellationToken ct)
     {
-        var items = await _api.GetFromJsonAsync<List<SubMenuDto>>(
+        var response = await Api.GetAsync(
             $"/api/submenus/by-menu/{menuId}", ct);
 
+        var failure = await HandleApiFailureAsync(
+            response,
+            "Alt menüler alınamadı.");
+
+        if (failure != null)
+            return failure;
+
+        var items = await response
+            .ReadContentAsync<List<SubMenuDto>>() ?? new();
+
         ViewBag.MenuId = menuId;
+
         return View(items);
     }
 
+    // --------------------------------------------------
     // CREATE (GET)
+    // --------------------------------------------------
     public IActionResult Create(Guid menuId)
     {
         ViewBag.MenuId = menuId;
         return View();
     }
 
+    // --------------------------------------------------
     // CREATE (POST)
-    [HttpPost]
-    [ValidateAntiForgeryToken]
+    // --------------------------------------------------
+    [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(
         CreateSubMenuDto dto,
         CancellationToken ct)
@@ -45,24 +60,39 @@ public class SubMenusController : Controller
             return View(dto);
         }
 
-        var response = await _api.PostAsJsonAsync(
+        var response = await Api.PostAsJsonAsync(
             "/api/submenus", dto, ct);
 
-        if (!response.IsSuccessStatusCode)
-        {
-            ModelState.AddModelError("", "Alt menü oluşturulamadı.");
-            ViewBag.MenuId = dto.MenuId;
-            return View(dto);
-        }
+        var failure = await HandleApiFailureAsync(
+            response,
+            "Alt menü oluşturulamadı.");
 
-        return RedirectToAction(nameof(Index), new { menuId = dto.MenuId });
+        if (failure != null)
+            return failure;
+
+        return SuccessAndRedirect("Alt menü başarıyla oluşturuldu.");
     }
 
+    // --------------------------------------------------
     // EDIT (GET)
-    public async Task<IActionResult> Edit(Guid id, Guid menuId, CancellationToken ct)
+    // --------------------------------------------------
+    public async Task<IActionResult> Edit(
+        Guid id,
+        Guid menuId,
+        CancellationToken ct)
     {
-        var item = await _api.GetFromJsonAsync<SubMenuDto>(
+        var response = await Api.GetAsync(
             $"/api/submenus/{id}", ct);
+
+        var failure = await HandleApiFailureAsync(
+            response,
+            "Alt menü bulunamadı.");
+
+        if (failure != null)
+            return failure;
+
+        var item = await response
+            .ReadContentAsync<SubMenuDto>();
 
         if (item == null)
             return NotFound();
@@ -77,9 +107,10 @@ public class SubMenusController : Controller
         });
     }
 
+    // --------------------------------------------------
     // EDIT (POST)
-    [HttpPost]
-    [ValidateAntiForgeryToken]
+    // --------------------------------------------------
+    [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(
         UpdateSubMenuDto dto,
         Guid menuId,
@@ -91,33 +122,60 @@ public class SubMenusController : Controller
             return View(dto);
         }
 
-        var response = await _api.PutAsJsonAsync(
+        var response = await Api.PutAsJsonAsync(
             $"/api/submenus/{dto.Id}", dto, ct);
 
-        if (!response.IsSuccessStatusCode)
-        {
-            ModelState.AddModelError("", "Alt menü güncellenemedi.");
-            ViewBag.MenuId = menuId;
-            return View(dto);
-        }
+        var failure = await HandleApiFailureAsync(
+            response,
+            "Alt menü güncellenemedi.");
 
-        return RedirectToAction(nameof(Index), new { menuId });
+        if (failure != null)
+            return failure;
+
+        return SuccessAndRedirect("Alt menü başarıyla güncellendi.");
     }
 
+    // --------------------------------------------------
     // ACTIVATE
+    // --------------------------------------------------
     [HttpPost]
-    public async Task<IActionResult> Activate(Guid id, Guid menuId, CancellationToken ct)
+    public async Task<IActionResult> Activate(
+        Guid id,
+        Guid menuId,
+        CancellationToken ct)
     {
-        await _api.PutAsync($"/api/submenus/{id}/activate", null, ct);
-        return RedirectToAction(nameof(Index), new { menuId });
+        var response = await Api.PutAsync(
+            $"/api/submenus/{id}/activate", null, ct);
+
+        var failure = await HandleApiFailureAsync(
+            response,
+            "Alt menü aktifleştirilemedi.");
+
+        if (failure != null)
+            return failure;
+
+        return SuccessAndRedirect("Alt menü aktifleştirildi.");
     }
 
+    // --------------------------------------------------
     // DEACTIVATE
+    // --------------------------------------------------
     [HttpPost]
-    public async Task<IActionResult> Deactivate(Guid id, Guid menuId, CancellationToken ct)
+    public async Task<IActionResult> Deactivate(
+        Guid id,
+        Guid menuId,
+        CancellationToken ct)
     {
-        await _api.PutAsync($"/api/submenus/{id}/deactivate", null, ct);
-        return RedirectToAction(nameof(Index), new { menuId });
+        var response = await Api.PutAsync(
+            $"/api/submenus/{id}/deactivate", null, ct);
+
+        var failure = await HandleApiFailureAsync(
+            response,
+            "Alt menü pasifleştirilemedi.");
+
+        if (failure != null)
+            return failure;
+
+        return SuccessAndRedirect("Alt menü pasifleştirildi.");
     }
 }
-

@@ -1,109 +1,51 @@
-﻿using IzmPortal.Application.DTOs.Menu;
+﻿using IzmPortal.Application.Abstractions.Services;
+using IzmPortal.Application.DTOs.Menu;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace IzmPortal.Admin.Controllers;
+namespace IzmPortal.Api.Controllers;
 
-[Authorize]
-public class MenusController : Controller
+[ApiController]
+[Route("api/menus")]
+[Authorize(Policy = "AdminAccess")]
+public class MenusController : ControllerBase
 {
-    private readonly HttpClient _api;
+    private readonly IMenuService _menuService;
 
-    public MenusController(IHttpClientFactory factory)
+    public MenusController(IMenuService menuService)
     {
-        _api = factory.CreateClient("ApiClient");
+        _menuService = menuService;
     }
 
-    // LIST
-    public async Task<IActionResult> Index(CancellationToken ct)
-    {
-        var items = await _api.GetFromJsonAsync<List<MenuDto>>(
-            "/api/menus", ct);
+    [HttpGet]
+    public async Task<IActionResult> GetAll(CancellationToken ct)
+        => Ok((await _menuService.GetAllAsync(ct)).Data);
 
-        return View(items);
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
+    {
+        var result = await _menuService.GetByIdAsync(id, ct);
+        return result.Succeeded ? Ok(result.Data) : NotFound(result.Message);
     }
 
-    // CREATE (GET)
-    public IActionResult Create()
-    {
-        return View();
-    }
-
-    // CREATE (POST)
     [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(
-        CreateMenuDto dto,
-        CancellationToken ct)
+    public async Task<IActionResult> Create(CreateMenuDto dto, CancellationToken ct)
+        => Ok((await _menuService.CreateAsync(dto, ct)).Message);
+
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> Update(Guid id, UpdateMenuDto dto, CancellationToken ct)
     {
-        if (!ModelState.IsValid)
-            return View(dto);
+        if (id != dto.Id)
+            return BadRequest("Id uyuşmazlığı.");
 
-        var response = await _api.PostAsJsonAsync(
-            "/api/menus", dto, ct);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            ModelState.AddModelError("", "Menü oluşturulamadı.");
-            return View(dto);
-        }
-
-        return RedirectToAction(nameof(Index));
+        return Ok((await _menuService.UpdateAsync(dto, ct)).Message);
     }
 
-    // EDIT (GET)
-    public async Task<IActionResult> Edit(Guid id, CancellationToken ct)
-    {
-        var item = await _api.GetFromJsonAsync<MenuDto>(
-            $"/api/menus/{id}", ct);
-
-        if (item == null)
-            return NotFound();
-
-        return View(new UpdateMenuDto
-        {
-            Id = item.Id,
-            Title = item.Title,
-            Order = item.Order
-        });
-    }
-
-    // EDIT (POST)
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(
-        UpdateMenuDto dto,
-        CancellationToken ct)
-    {
-        if (!ModelState.IsValid)
-            return View(dto);
-
-        var response = await _api.PutAsJsonAsync(
-            $"/api/menus/{dto.Id}", dto, ct);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            ModelState.AddModelError("", "Menü güncellenemedi.");
-            return View(dto);
-        }
-
-        return RedirectToAction(nameof(Index));
-    }
-
-    // ACTIVATE
-    [HttpPost]
+    [HttpPut("{id:guid}/activate")]
     public async Task<IActionResult> Activate(Guid id, CancellationToken ct)
-    {
-        await _api.PutAsync($"/api/menus/{id}/activate", null, ct);
-        return RedirectToAction(nameof(Index));
-    }
+        => Ok((await _menuService.ActivateAsync(id, ct)).Message);
 
-    // DEACTIVATE
-    [HttpPost]
+    [HttpPut("{id:guid}/deactivate")]
     public async Task<IActionResult> Deactivate(Guid id, CancellationToken ct)
-    {
-        await _api.PutAsync($"/api/menus/{id}/deactivate", null, ct);
-        return RedirectToAction(nameof(Index));
-    }
+        => Ok((await _menuService.DeactivateAsync(id, ct)).Message);
 }
-

@@ -32,75 +32,51 @@ public class ApplicationShortcutsController : BaseAdminController
 
     public IActionResult Create() => View();
 
-    [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(CreateUpdateApplicationShortcutDto dto)
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create(
+        CreateApplicationShortcutDto dto,
+        CancellationToken ct)
     {
         if (!ModelState.IsValid)
             return View(dto);
 
         var response = await Api.PostAsJsonAsync(
-            "/api/application-shortcuts", dto);
+            "/api/applicationshortcuts", dto, ct);
 
         var failure = await HandleApiFailureAsync(
             response,
-            "Uygulama kısayolu oluşturulamadı.");
+            "Kısayol oluşturulamadı.");
 
         if (failure != null)
             return failure;
 
-        return SuccessAndRedirect(
-            "Uygulama kısayolu başarıyla oluşturuldu.");
+        return SuccessAndRedirect("Kısayol oluşturuldu.");
     }
 
-    public async Task<IActionResult> Edit(Guid id)
-    {
-        var response = await Api.GetAsync(
-            $"/api/application-shortcuts/admin/{id}");
 
-        var failure = await HandleApiFailureAsync(
-            response,
-            "Kayıt bulunamadı.");
-
-        if (failure != null)
-            return failure;
-
-        var item = await response
-            .ReadContentAsync<ApplicationShortcutAdminDto>();
-
-        if (item == null)
-            return NotFound();
-
-        ViewBag.Id = id;
-
-        return View(new CreateUpdateApplicationShortcutDto
-        {
-            Title = item.Title,
-            Icon = item.Icon,
-            Url = item.Url,
-            IsExternal = item.IsExternal,
-            IsActive = item.IsActive
-        });
-    }
-
-    [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(Guid id, CreateUpdateApplicationShortcutDto dto)
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(
+       UpdateApplicationShortcutDto dto,
+       CancellationToken ct)
     {
         if (!ModelState.IsValid)
             return View(dto);
 
         var response = await Api.PutAsJsonAsync(
-            $"/api/application-shortcuts/{id}", dto);
+            $"/api/applicationshortcuts/{dto.Id}", dto, ct);
 
         var failure = await HandleApiFailureAsync(
             response,
-            "Uygulama kısayolu güncellenemedi.");
+            "Kısayol güncellenemedi.");
 
         if (failure != null)
             return failure;
 
-        return SuccessAndRedirect(
-            "Uygulama kısayolu başarıyla güncellendi.");
+        return SuccessAndRedirect("Kısayol güncellendi.");
     }
+
 
     [HttpPost]
     public async Task<IActionResult> Activate(Guid id)

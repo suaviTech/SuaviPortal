@@ -1,5 +1,5 @@
 ﻿using IzmPortal.Application.Common;
-using IzmPortal.Application.DTOs.Menu;
+using IzmPortal.Application.DTOs.SubMenu;
 
 namespace IzmPortal.Application.Abstractions.Services;
 

@@ -1,7 +1,7 @@
 ﻿using IzmPortal.Application.Abstractions.Repositories;
 using IzmPortal.Application.Abstractions.Services;
 using IzmPortal.Application.Common;
-using IzmPortal.Application.DTOs.Menu;
+using IzmPortal.Application.DTOs.SubMenu;
 using IzmPortal.Domain.Entities;
 using IzmPortal.Domain.Enums;
 

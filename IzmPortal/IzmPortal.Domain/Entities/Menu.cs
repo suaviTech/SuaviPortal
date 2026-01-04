@@ -20,17 +20,6 @@ public class Menu : BaseEntity
         CreatedAt = DateTime.UtcNow;
     }
 
-    public void Rename(string title)
-    {
-        Title = title;
-        UpdatedAt = DateTime.UtcNow;
-    }
-
-    public void ChangeOrder(int order)
-    {
-        Order = order;
-        UpdatedAt = DateTime.UtcNow;
-    }
     public void Update(string title, int order)
     {
         Title = title;
@@ -38,6 +27,15 @@ public class Menu : BaseEntity
         UpdatedAt = DateTime.UtcNow;
     }
 
-    public void Activate() => IsActive = true;
-    public void Deactivate() => IsActive = false;
+    public void Activate()
+    {
+        IsActive = true;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void Deactivate()
+    {
+        IsActive = false;
+        UpdatedAt = DateTime.UtcNow;
+    }
 }

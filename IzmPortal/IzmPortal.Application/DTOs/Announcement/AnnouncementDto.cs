@@ -10,4 +10,5 @@ public class AnnouncementDto
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }
     public string CreatedBy { get; set; } = null!;
+    public string? PdfUrl { get; set; }   // ✅
 }

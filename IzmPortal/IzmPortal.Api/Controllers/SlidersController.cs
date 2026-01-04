@@ -1,91 +1,61 @@
 ﻿using IzmPortal.Application.Abstractions.Services;
-using IzmPortal.Application.Common;
 using IzmPortal.Application.DTOs.Slider;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace IzmPortal.Api.Controllers;
-
 [ApiController]
 [Route("api/sliders")]
+[Authorize(Policy = "AdminAccess")]
 public class SlidersController : ControllerBase
 {
-    private readonly ISliderService _sliderService;
-    private readonly IFileStorageService _fileStorageService;
+    private readonly ISliderService _service;
 
-    public SlidersController(
-        ISliderService sliderService,
-        IFileStorageService fileStorageService)
+    public SlidersController(ISliderService service)
     {
-        _sliderService = sliderService;
-        _fileStorageService = fileStorageService;
+        _service = service;
     }
 
-    // --------------------
-    // PUBLIC - GET SLIDERS
-    // --------------------
     [HttpGet]
-    [AllowAnonymous]
-    public async Task<IActionResult> GetAll(CancellationToken ct)
-    {
-        var result = await _sliderService.GetAllAsync(ct);
+    public async Task<IActionResult> Get(CancellationToken ct)
+        => Ok((await _service.GetAllAsync(ct)).Data);
 
-        if (!result.Succeeded)
-            return BadRequest(result.Message);
-
-        var baseUrl = $"{Request.Scheme}://{Request.Host}";
-
-        var list = result.Data!.Select(s => new SliderDto
-        {
-            Id = s.Id,
-            ImageUrl = FileUrlBuilder.Build(baseUrl, s.ImagePath)
-        });
-
-        return Ok(list);
-    }
-
-    // --------------------
-    // ADMIN - UPLOAD SLIDER
-    // --------------------
     [HttpPost]
-    [Authorize(Policy = "AdminAccess")]
-    public async Task<IActionResult> Upload(
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> Create(
+        [FromForm] CreateSliderDto dto,
         IFormFile file,
         CancellationToken ct)
     {
         if (file == null || file.Length == 0)
-            return BadRequest("Dosya boş.");
+            return BadRequest("Resim zorunludur.");
 
-        using var stream = file.OpenReadStream();
+        var folder = Path.Combine("wwwroot", "uploads", "images");
+        Directory.CreateDirectory(folder);
 
-        var relativePath = await _fileStorageService.SaveAsync(
-            stream,
-            file.FileName,
-            "images/sliders",
+        var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+        var path = Path.Combine(folder, fileName);
+
+        await using var stream = new FileStream(path, FileMode.Create);
+        await file.CopyToAsync(stream, ct);
+
+        var result = await _service.CreateAsync(
+            dto,
+            $"/uploads/images/{fileName}",
             ct);
 
-        var result = await _sliderService.CreateAsync(relativePath, ct);
-
         if (!result.Succeeded)
             return BadRequest(result.Message);
 
-        return Ok("Slider başarıyla yüklendi.");
+        return Ok(result.Message);
     }
 
-    // --------------------
-    // ADMIN - DELETE SLIDER
-    // --------------------
-    [HttpDelete("{id:guid}")]
-    [Authorize(Policy = "AdminAccess")]
-    public async Task<IActionResult> Delete(
-        Guid id,
-        CancellationToken ct)
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
-        var result = await _sliderService.DeleteAsync(id, ct);
-
+        var result = await _service.DeleteAsync(id, ct);
         if (!result.Succeeded)
             return BadRequest(result.Message);
 
-        return Ok("Slider silindi.");
+        return Ok(result.Message);
     }
 }

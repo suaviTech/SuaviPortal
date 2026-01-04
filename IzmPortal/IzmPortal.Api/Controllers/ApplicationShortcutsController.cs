@@ -3,10 +3,9 @@ using IzmPortal.Application.DTOs.ApplicationShortcut;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace IzmPortal.Api.Controllers;
-
 [ApiController]
 [Route("api/application-shortcuts")]
+[Authorize(Policy = "AdminAccess")]
 public class ApplicationShortcutsController : ControllerBase
 {
     private readonly IApplicationShortcutService _service;
@@ -16,88 +15,51 @@ public class ApplicationShortcutsController : ControllerBase
         _service = service;
     }
 
-    // hookup --------------------------------------------------
-    // PUBLIC
-    // --------------------------------------------------
-
-    [HttpGet]
-    [AllowAnonymous]
-    public async Task<IActionResult> GetPublic()
-    {
-        var items = await _service.GetPublicAsync();
-        return Ok(items);
-    }
-
-    // --------------------------------------------------
-    // ADMIN
-    // --------------------------------------------------
-
     [HttpGet("admin")]
-    [Authorize(Policy = "AdminAccess")]
-    public async Task<IActionResult> GetAdmin()
-    {
-        var items = await _service.GetAdminAsync();
-        return Ok(items);
-    }
+    public async Task<IActionResult> GetAll(CancellationToken ct)
+        => Ok((await _service.GetAllAsync(ct)).Data);
 
-    [HttpGet("admin/{id:guid}")]
-    [Authorize(Policy = "AdminAccess")]
-    public async Task<IActionResult> GetAdminById(Guid id)
-    {
-        var item = await _service.GetAdminByIdAsync(id);
-
-        if (item == null)
-            return NotFound();
-
-        return Ok(item);
-    }
+    [HttpGet("admin/{id}")]
+    public async Task<IActionResult> Get(Guid id, CancellationToken ct)
+        => Ok((await _service.GetByIdAsync(id, ct)).Data);
 
     [HttpPost]
-    [Authorize(Policy = "AdminAccess")]
     public async Task<IActionResult> Create(
-        [FromBody] CreateUpdateApplicationShortcutDto dto)
+     [FromBody] CreateApplicationShortcutDto dto,
+     CancellationToken ct)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
+        var result = await _service.CreateAsync(dto, ct);
 
-        await _service.CreateAsync(dto);
-        return Ok("Uygulama kısayolu oluşturuldu.");
+        if (!result.Succeeded)
+            return BadRequest(result.Message);
+
+        return Ok(result.Message);
     }
 
-    [HttpPut("{id:guid}")]
-    [Authorize(Policy = "AdminAccess")]
+
+    [HttpPut("{id}")]
     public async Task<IActionResult> Update(
-        Guid id,
-        [FromBody] CreateUpdateApplicationShortcutDto dto)
+      Guid id,
+      [FromBody] UpdateApplicationShortcutDto dto,
+      CancellationToken ct)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
+        if (id != dto.Id)
+            return BadRequest("Id uyuşmazlığı.");
 
-        await _service.UpdateAsync(id, dto);
-        return Ok("Uygulama kısayolu güncellendi.");
+        var result = await _service.UpdateAsync(dto, ct);
+
+        if (!result.Succeeded)
+            return BadRequest(result.Message);
+
+        return Ok(result.Message);
     }
 
-    [HttpPut("{id:guid}/activate")]
-    [Authorize(Policy = "AdminAccess")]
-    public async Task<IActionResult> Activate(Guid id)
-    {
-        await _service.ActivateAsync(id);
-        return Ok("Uygulama kısayolu aktifleştirildi.");
-    }
 
-    [HttpPut("{id:guid}/deactivate")]
-    [Authorize(Policy = "AdminAccess")]
-    public async Task<IActionResult> Deactivate(Guid id)
-    {
-        await _service.DeactivateAsync(id);
-        return Ok("Uygulama kısayolu pasifleştirildi.");
-    }
+    [HttpPut("{id}/activate")]
+    public async Task<IActionResult> Activate(Guid id, CancellationToken ct)
+        => Ok((await _service.ActivateAsync(id, ct)).Message);
 
-    [HttpDelete("{id:guid}")]
-    [Authorize(Policy = "AdminAccess")]
-    public async Task<IActionResult> Delete(Guid id)
-    {
-        await _service.DeleteAsync(id);
-        return Ok("Uygulama kısayolu silindi.");
-    }
+    [HttpPut("{id}/deactivate")]
+    public async Task<IActionResult> Deactivate(Guid id, CancellationToken ct)
+        => Ok((await _service.DeactivateAsync(id, ct)).Message);
 }

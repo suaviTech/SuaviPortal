@@ -6,6 +6,8 @@ public class MenuDocument : BaseEntity
 {
     public string Title { get; private set; } = null!;
     public string FilePath { get; private set; } = null!;
+    public bool IsActive { get; private set; } = true;
+
     public Guid SubMenuId { get; private set; }
 
     protected MenuDocument() { }
@@ -20,4 +22,13 @@ public class MenuDocument : BaseEntity
         SubMenuId = subMenuId;
         CreatedAt = DateTime.UtcNow;
     }
+
+    public void Update(string title)
+    {
+        Title = title;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void Activate() => IsActive = true;
+    public void Deactivate() => IsActive = false;
 }

@@ -1,4 +1,6 @@
-﻿using IzmPortal.Admin.Extensions;
+﻿using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
 using IzmPortal.Admin.ViewModels.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -6,93 +8,158 @@ using Microsoft.AspNetCore.Mvc;
 namespace IzmPortal.Admin.Controllers;
 
 [Authorize(Roles = "SuperAdmin")]
-public class UsersController : BaseAdminController
+public class UsersController : Controller
 {
-    public UsersController(IHttpClientFactory factory)
-        : base(factory)
+   
+    private readonly HttpClient _apiClient;
+    public UsersController(IHttpClientFactory httpClientFactory)
     {
+        _apiClient = httpClientFactory.CreateClient("ApiClient");
     }
 
+    // --------------------
+    // INDEX
+    // --------------------
     public async Task<IActionResult> Index()
     {
-        var response = await Api.GetAsync("/api/users");
+        var client = _apiClient;
+        var response = await client.GetAsync("/api/users");
 
-        var failure = await HandleApiFailureAsync(
-            response,
-            "Kullanıcılar alınamadı.");
+        if (!response.IsSuccessStatusCode)
+        {
+            TempData["Error"] = "Kullanıcılar alınamadı.";
+            return View(new UsersIndexVm());
+        }
 
-        if (failure != null)
-            return failure;
+        var users =
+            JsonSerializer.Deserialize<List<UserListVm>>(
+                await response.Content.ReadAsStringAsync(),
+                JsonOptions());
 
-        var users = await response
-            .ReadContentAsync<List<UserAdminVm>>() ?? new();
-
-        return View(users);
+        return View(new UsersIndexVm
+        {
+            Users = users ?? new()
+        });
     }
 
+    // --------------------
+    // LOOKUP (API)
+    // --------------------
     [HttpPost]
-    public async Task<IActionResult> Activate(string id)
+    public async Task<IActionResult> Lookup(string email)
     {
-        var response = await Api.PostAsync(
-            $"/api/users/{id}/activate", null);
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            TempData["Error"] = "Email boş olamaz.";
+            return RedirectToAction(nameof(Index));
+        }
 
-        var failure = await HandleApiFailureAsync(
-            response,
-            "Kullanıcı aktifleştirilemedi.");
+        var client = _apiClient;
+        var response = await client.GetAsync(
+            $"/api/users/lookup?email={email}");
 
-        if (failure != null)
-            return failure;
+        if (!response.IsSuccessStatusCode)
+        {
+            TempData["Error"] = "Kullanıcı sorgulanamadı.";
+            return RedirectToAction(nameof(Index));
+        }
 
-        return SuccessAndRedirect("Kullanıcı aktifleştirildi.");
+        var lookup =
+            JsonSerializer.Deserialize<UserLookupResultVm>(
+                await response.Content.ReadAsStringAsync(),
+                JsonOptions());
+
+        TempData["Lookup"] = JsonSerializer.Serialize(lookup);
+        TempData["LookupEmail"] = email;
+
+        return RedirectToAction(nameof(Index));
     }
 
+    // --------------------
+    // AUTHORIZE FROM PERSONAL
+    // --------------------
     [HttpPost]
-    public async Task<IActionResult> Deactivate(string id)
+    public async Task<IActionResult> AuthorizeFromPersonal(
+        string email,
+        string role)
     {
-        var response = await Api.PostAsync(
-            $"/api/users/{id}/deactivate", null);
+        var client = _apiClient;
 
-        var failure = await HandleApiFailureAsync(
-            response,
-            "Kullanıcı pasifleştirilemedi.");
+        var body = new
+        {
+            email,
+            role
+        };
 
-        if (failure != null)
-            return failure;
+        var response = await client.PostAsync(
+            "/api/users/authorize-from-personal",
+            new StringContent(
+                JsonSerializer.Serialize(body),
+                Encoding.UTF8,
+                "application/json"));
 
-        return SuccessAndRedirect("Kullanıcı pasifleştirildi.");
+        if (!response.IsSuccessStatusCode)
+        {
+            TempData["Error"] =
+                await response.Content.ReadAsStringAsync();
+            return RedirectToAction(nameof(Index));
+        }
+
+        TempData["Success"] = "Kullanıcı yetkilendirildi.";
+        return RedirectToAction(nameof(Index));
     }
-
     [HttpPost]
-    public async Task<IActionResult> ChangeRole(string id, string role)
+    public async Task<IActionResult> ChangeRole(string userId, string role)
     {
-        var response = await Api.PostAsJsonAsync(
+        var response = await _apiClient.PostAsJsonAsync(
             "/api/users/change-role",
-            new { UserId = id, Role = role });
+            new
+            {
+                UserId = userId,
+                Role = role
+            });
 
-        var failure = await HandleApiFailureAsync(
-            response,
-            "Rol değiştirilemedi.");
+        if (!response.IsSuccessStatusCode)
+        {
+            TempData["Error"] = "Rol değiştirilemedi.";
+            return RedirectToAction(nameof(Index));
+        }
 
-        if (failure != null)
-            return failure;
-
-        return SuccessAndRedirect("Rol güncellendi.");
+        TempData["Success"] = "Rol başarıyla güncellendi.";
+        return RedirectToAction(nameof(Index));
     }
+
+    // --------------------
+    // HELPERS
+    // --------------------
+
+    private static JsonSerializerOptions JsonOptions()
+        => new() { PropertyNameCaseInsensitive = true };
+
+    //ResetPassword action EKLE
 
     [HttpPost]
-    public async Task<IActionResult> ResetPassword(string id)
+    public async Task<IActionResult> ResetPassword(string userId)
     {
-        var response = await Api.PostAsJsonAsync(
+        // Varsayılan geçici şifre (kurum standardı)
+        var tempPassword = "Temp123*"; // istersen konfigürasyona alırız
+
+        var response = await _apiClient.PostAsJsonAsync(
             "/api/users/reset-password",
-            new { UserId = id, NewPassword = "1234" });
+            new
+            {
+                UserId = userId,
+                NewPassword = tempPassword
+            });
 
-        var failure = await HandleApiFailureAsync(
-            response,
-            "Şifre resetlenemedi.");
+        if (!response.IsSuccessStatusCode)
+        {
+            TempData["Error"] = "Şifre sıfırlanamadı.";
+            return RedirectToAction(nameof(Index));
+        }
 
-        if (failure != null)
-            return failure;
-
-        return SuccessAndRedirect("Şifre resetlendi (1234).");
+        TempData["Success"] = "Şifre sıfırlandı. Kullanıcı ilk girişte şifre değiştirecek.";
+        return RedirectToAction(nameof(Index));
     }
+
 }

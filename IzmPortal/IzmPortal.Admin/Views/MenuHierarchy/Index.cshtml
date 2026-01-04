@@ -1,0 +1,51 @@
+﻿@model List<IzmPortal.Application.DTOs.Menu.MenuDto>
+
+@{
+    ViewData["Title"] = "Menü Yapısı";
+}
+
+<h2>Menü Yapısı</h2>
+
+@foreach (var menu in Model.OrderBy(x => x.Order))
+{
+    <div class="card mb-3">
+        <div class="card-header">
+            <strong>@menu.Title</strong>
+            <span class="text-muted ms-2">(Sıra: @menu.Order)</span>
+        </div>
+
+        <div class="card-body">
+            @if (!menu.SubMenus.Any())
+            {
+                <p class="text-muted">Alt menü yok.</p>
+            }
+            else
+            {
+                <ul class="list-group">
+                    @foreach (var sub in menu.SubMenus.OrderBy(x => x.Order))
+                    {
+                        <li class="list-group-item">
+                            <strong>@sub.Title</strong>
+
+                            <div class="mt-2">
+                                <a asp-controller="MenuDocuments"
+                                   asp-action="Index"
+                                   asp-route-subMenuId="@sub.Id"
+                                   class="btn btn-sm btn-outline-primary">
+                                    Dokümanları Yönet
+                                </a>
+
+                                <a asp-controller="MenuDocuments"
+                                   asp-action="Upload"
+                                   asp-route-subMenuId="@sub.Id"
+                                   class="btn btn-sm btn-outline-success ms-2">
+                                    Doküman Yükle
+                                </a>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+}

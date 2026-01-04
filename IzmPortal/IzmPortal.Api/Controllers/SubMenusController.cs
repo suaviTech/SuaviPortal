@@ -1,110 +1,89 @@
 ﻿using IzmPortal.Application.Abstractions.Services;
-using IzmPortal.Application.DTOs.Menu;
+using IzmPortal.Application.DTOs.SubMenu;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IzmPortal.Api.Controllers;
 
 [ApiController]
-[Route("api/sub-menus")]
+[Route("api/submenus")]
 [Authorize(Policy = "AdminAccess")]
 public class SubMenusController : ControllerBase
 {
-    private readonly ISubMenuService _subMenuService;
+    private readonly ISubMenuService _service;
 
-    public SubMenusController(ISubMenuService subMenuService)
+    public SubMenusController(ISubMenuService service)
     {
-        _subMenuService = subMenuService;
+        _service = service;
     }
 
-    // --------------------
-    // GET BY MENU (ADMIN)
-    // --------------------
+    // GET /api/submenus/by-menu/{menuId}
     [HttpGet("by-menu/{menuId:guid}")]
-    public async Task<IActionResult> GetByMenuId(Guid menuId, CancellationToken ct)
+    public async Task<IActionResult> GetByMenu(
+        Guid menuId,
+        CancellationToken ct)
     {
-        var result = await _subMenuService.GetByMenuIdAsync(menuId, ct);
+        var result = await _service.GetByMenuIdAsync(menuId, ct);
         return Ok(result.Data);
     }
 
-    // --------------------
-    // GET BY ID (ADMIN)
-    // --------------------
+    // GET /api/submenus/{id}
     [HttpGet("{id:guid}")]
-    public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
+    public async Task<IActionResult> Get(Guid id, CancellationToken ct)
     {
-        var result = await _subMenuService.GetByIdAsync(id, ct);
-
+        var result = await _service.GetByIdAsync(id, ct);
         if (!result.Succeeded)
             return NotFound(result.Message);
 
         return Ok(result.Data);
     }
 
-    // --------------------
-    // CREATE (ADMIN)
-    // --------------------
+    // POST
     [HttpPost]
     public async Task<IActionResult> Create(
-        [FromBody] CreateSubMenuDto dto,
+        CreateSubMenuDto dto,
         CancellationToken ct)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
-        var result = await _subMenuService.CreateAsync(dto, ct);
-
+        var result = await _service.CreateAsync(dto, ct);
         if (!result.Succeeded)
             return BadRequest(result.Message);
 
         return Ok(result.Message);
     }
 
-    // --------------------
-    // UPDATE (ADMIN)
-    // --------------------
+    // PUT
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(
         Guid id,
-        [FromBody] UpdateSubMenuDto dto,
+        UpdateSubMenuDto dto,
         CancellationToken ct)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
         if (id != dto.Id)
             return BadRequest("Id uyuşmazlığı.");
 
-        var result = await _subMenuService.UpdateAsync(dto, ct);
-
+        var result = await _service.UpdateAsync(dto, ct);
         if (!result.Succeeded)
             return BadRequest(result.Message);
 
         return Ok(result.Message);
     }
 
-    // --------------------
-    // ACTIVATE (ADMIN)
-    // --------------------
+    // ACTIVATE
     [HttpPut("{id:guid}/activate")]
     public async Task<IActionResult> Activate(Guid id, CancellationToken ct)
     {
-        var result = await _subMenuService.ActivateAsync(id, ct);
-
+        var result = await _service.ActivateAsync(id, ct);
         if (!result.Succeeded)
             return BadRequest(result.Message);
 
         return Ok(result.Message);
     }
 
-    // --------------------
-    // DEACTIVATE (ADMIN)
-    // --------------------
+    // DEACTIVATE
     [HttpPut("{id:guid}/deactivate")]
     public async Task<IActionResult> Deactivate(Guid id, CancellationToken ct)
     {
-        var result = await _subMenuService.DeactivateAsync(id, ct);
-
+        var result = await _service.DeactivateAsync(id, ct);
         if (!result.Succeeded)
             return BadRequest(result.Message);
 

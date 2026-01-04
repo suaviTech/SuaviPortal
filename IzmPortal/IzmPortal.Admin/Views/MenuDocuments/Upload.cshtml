@@ -1,26 +1,47 @@
 ﻿@{
-    ViewData["Title"] = "PDF Yükle";
-    var subMenuId = (Guid)ViewBag.SubMenuId;
+    ViewData["Title"] = "Doküman Yükle";
+    var subMenuId = ViewBag.SubMenuId;
 }
 
-<h2>PDF Yükle</h2>
+<h2>Doküman Yükle</h2>
 
-<form method="post" enctype="multipart/form-data">
-    <input type="hidden" name="subMenuId" value="@subMenuId" />
+<form asp-action="Upload"
+      method="post"
+      enctype="multipart/form-data">
 
-    <label>Başlık</label>
-    <input name="title" required />
+    <input type="hidden"
+           name="subMenuId"
+           value="@subMenuId" />
 
-    <label>PDF Dosyası</label>
-    <input type="file" name="file" accept=".pdf" required />
+    <div class="mb-3">
+        <label class="form-label">Doküman Başlığı</label>
+        <input type="text"
+               name="title"
+               class="form-control"
+               required />
+    </div>
 
-    <div class="mt-3">
-        <button class="btn btn-primary">Yükle</button>
+    <div class="mb-3">
+        <label class="form-label">PDF Dosyası</label>
+        <input type="file"
+               name="file"
+               class="form-control"
+               accept="application/pdf"
+               required />
+        <small class="text-muted">
+            Sadece PDF dosyaları yüklenebilir.
+        </small>
+    </div>
+
+    <div class="mt-4">
+        <button type="submit" class="btn btn-primary">
+            Yükle
+        </button>
+
         <a asp-action="Index"
            asp-route-subMenuId="@subMenuId"
-           class="btn btn-secondary">
+           class="btn btn-secondary ms-2">
             İptal
         </a>
     </div>
 </form>
-

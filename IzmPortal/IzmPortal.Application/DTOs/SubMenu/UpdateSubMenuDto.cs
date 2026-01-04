@@ -1,4 +1,4 @@
-﻿namespace IzmPortal.Application.DTOs.Menu;
+﻿namespace IzmPortal.Application.DTOs.SubMenu;
 
 public class UpdateSubMenuDto
 {
@@ -6,4 +6,3 @@ public class UpdateSubMenuDto
     public string Title { get; set; } = null!;
     public int Order { get; set; }
 }
-

@@ -1,4 +1,6 @@
-﻿namespace IzmPortal.Application.DTOs.Menu;
+﻿using IzmPortal.Application.DTOs.SubMenu;
+
+namespace IzmPortal.Application.DTOs.Menu;
 
 public class MenuDto
 {

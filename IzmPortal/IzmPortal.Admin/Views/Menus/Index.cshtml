@@ -1,16 +1,10 @@
 ﻿@model List<IzmPortal.Application.DTOs.Menu.MenuDto>
 
-@{
-    ViewData["Title"] = "Menüler";
-}
-
 <h2>Menüler</h2>
 
-<a asp-action="Create" class="btn btn-primary mb-3">
-    Yeni Menü
-</a>
+<a asp-action="Create" class="btn btn-primary mb-3">Yeni Menü</a>
 
-<table>
+<table class="table table-sm table-striped">
     <thead>
         <tr>
             <th>Başlık</th>
@@ -26,40 +20,21 @@
                 <td>@m.Title</td>
                 <td class="text-center">@m.Order</td>
                 <td class="text-center">
-                    @if (m.IsActive)
-                    {
-                        <span class="badge badge-success">Aktif</span>
-                    }
-                    else
-                    {
-                        <span class="badge badge-secondary">Pasif</span>
-                    }
+                    <span class="badge @(m.IsActive ? "bg-success" : "bg-secondary")">
+                        @(m.IsActive ? "Aktif" : "Pasif")
+                    </span>
                 </td>
-                <td class="text-center">
-                    <a asp-action="Edit"
-                       asp-route-id="@m.Id"
-                       class="btn btn-warning">
-                        Düzenle
-                    </a>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@m.Id" class="btn btn-warning btn-sm">Düzenle</a>
 
-                    @if (m.IsActive)
-                    {
-                        <form asp-action="Deactivate"
-                              asp-route-id="@m.Id"
-                              method="post"
-                              class="d-inline">
-                            <button class="btn btn-secondary">Pasif</button>
-                        </form>
-                    }
-                    else
-                    {
-                        <form asp-action="Activate"
-                              asp-route-id="@m.Id"
-                              method="post"
-                              class="d-inline">
-                            <button class="btn btn-success">Aktif</button>
-                        </form>
-                    }
+                    <form asp-action="@(m.IsActive ? "Deactivate" : "Activate")"
+                          asp-route-id="@m.Id"
+                          method="post"
+                          class="d-inline">
+                        <button class="btn btn-sm @(m.IsActive ? "btn-secondary" : "btn-success")">
+                            @(m.IsActive ? "Pasif" : "Aktif")
+                        </button>
+                    </form>
                 </td>
             </tr>
         }

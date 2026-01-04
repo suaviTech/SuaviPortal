@@ -4,29 +4,63 @@
     ViewData["Title"] = "Slider Yönetimi";
 }
 
-<h2>Slider Yönetimi</h2>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">Sliderlar</h2>
 
-<a asp-action="Upload" class="btn btn-primary mb-3">
-    Yeni Slider Yükle
-</a>
-
-<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px">
-    @foreach (var s in Model)
-    {
-        <div style="border:1px solid #ddd;padding:10px;border-radius:6px">
-            <img src="@s.ImageUrl"
-                 style="width:100%;height:120px;object-fit:cover;border-radius:4px" />
-
-            <form asp-action="Delete"
-                  asp-route-id="@s.Id"
-                  method="post"
-                  onsubmit="return confirm('Silinsin mi?');"
-                  class="mt-2 text-center">
-                <button class="btn btn-danger btn-sm">
-                    Sil
-                </button>
-            </form>
-        </div>
-    }
+    <a asp-action="Upload"
+       class="btn btn-primary btn-sm">
+        Yeni Slider Ekle
+    </a>
 </div>
 
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-sm table-striped mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th style="width:120px">Görsel</th>
+                    <th>Başlık</th>
+                    <th style="width:160px">Oluşturma</th>
+                    <th style="width:120px" class="text-end">İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="4"
+                            class="text-center text-muted p-3">
+                            Kayıt bulunamadı
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    foreach (var s in Model)
+                    {
+                        <tr>
+                            <td>
+                                <img src="@s.ImagePath"
+                                     style="height:60px; object-fit:cover;"
+                                     class="rounded border" />
+                            </td>
+                            <td>@s.Title</td>
+                            <td>@s.CreatedAt.ToString("dd.MM.yyyy HH:mm")</td>
+                            <td class="text-end">
+                                <form asp-action="Delete"
+                                      asp-route-id="@s.Id"
+                                      method="post"
+                                      class="d-inline"
+                                      onsubmit="return confirm('Silinsin mi?');">
+                                    <button class="btn btn-danger btn-sm">
+                                        Sil
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

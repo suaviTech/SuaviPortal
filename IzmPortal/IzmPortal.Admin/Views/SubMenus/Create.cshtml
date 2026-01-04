@@ -1,26 +1,25 @@
-﻿@model IzmPortal.Application.DTOs.Menu.CreateSubMenuDto
+﻿@using IzmPortal.Application.DTOs.Menu
+@using IzmPortal.Application.DTOs.SubMenu
+@model CreateSubMenuDto
 @{
     ViewData["Title"] = "Yeni Alt Menü";
-    var menuId = (Guid)ViewBag.MenuId;
 }
 
 <h2>Yeni Alt Menü</h2>
 
 <form method="post">
-    <input type="hidden" asp-for="MenuId" value="@menuId" />
+    <input type="hidden" asp-for="MenuId" value="@ViewBag.MenuId" />
 
     <label>Başlık</label>
-    <input asp-for="Title" required />
+    <input asp-for="Title" class="form-control" required />
 
     <label>Sıra</label>
-    <input asp-for="Order" type="number" required />
+    <input asp-for="Order" type="number" class="form-control" required />
 
     <div class="mt-3">
         <button class="btn btn-primary">Kaydet</button>
         <a asp-action="Index"
-           asp-route-menuId="@menuId"
-           class="btn btn-secondary">
-            İptal
-        </a>
+           asp-route-menuId="@ViewBag.MenuId"
+           class="btn btn-secondary">İptal</a>
     </div>
 </form>

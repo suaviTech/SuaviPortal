@@ -47,7 +47,19 @@
                     <tr>
                         <td>@x.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
                         <td>@x.UserName</td>
-                        <td><span class="badge bg-secondary">@x.Action</span></td>
+                        <td>
+                            <span class="badge
+                                @(x.Action switch
+                                  {
+                                      "Create" => "bg-success",
+                                      "Update" => "bg-warning text-dark",
+                                      "Delete" => "bg-danger",
+                                      _ => "bg-secondary"
+                                  })">
+                                @x.Action
+                            </span>
+                        </td>
+
                         <td>@x.EntityName</td>
                         <td class="text-muted">@x.EntityId</td>
                         <td>@x.IpAddress</td>

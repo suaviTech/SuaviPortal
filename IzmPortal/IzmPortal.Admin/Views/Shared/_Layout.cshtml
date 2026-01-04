@@ -5,31 +5,59 @@
     <title>@ViewData["Title"] - IzmPortal Admin</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <link rel="stylesheet" href="~/site.css" asp-append-version="true" />
+    <!-- Bootstrap (varsayım: zaten projede var) -->
+    <link rel="stylesheet" href="~/lib/bootstrap/css/bootstrap.min.css" />
+
+    <!-- Admin Kurumsal Tema -->
+    <link rel="stylesheet" href="~/css/admin-theme.css" asp-append-version="true" />
+
+    @RenderSection("Styles", required: false)
 </head>
 <body>
+
     <div class="admin-layout">
+
         <!-- SIDEBAR -->
         <aside class="sidebar">
-            <h2>IzmPortal</h2>
+            <div class="sidebar-header">
+                <span class="brand">IzmPortal</span>
+                <span class="brand-sub">Admin Panel</span>
+            </div>
 
-            @* 🔐 ROLE BAZLI MENÜ *@
-            @await Html.PartialAsync("_AdminMenu")
+            <nav class="sidebar-menu">
+                @await Html.PartialAsync("_AdminMenu")
+            </nav>
 
-            <hr style="border-color:#444; margin:16px 0;" />
-
-            <a asp-controller="Account" asp-action="Logout">
-                Çıkış
-            </a>
+            <div class="sidebar-footer">
+                <a asp-controller="Account" asp-action="Logout" class="logout-link">
+                    Çıkış Yap
+                </a>
+            </div>
         </aside>
 
         <!-- CONTENT -->
         <main class="content">
-            @RenderBody()
+            <div class="content-header">
+                <h1 class="page-title">
+                    @ViewData["Title"]
+                </h1>
+            </div>
+
+            <div class="content-body">
+                @await Html.PartialAsync("_Alerts")
+                @RenderBody()
+            </div>
+
         </main>
+
     </div>
 
+    <script src="~/lib/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="~/site.js" asp-append-version="true"></script>
+
     @await RenderSectionAsync("Scripts", required: false)
+
+    @await Html.PartialAsync("_PdfViewerModal")
+
 </body>
 </html>

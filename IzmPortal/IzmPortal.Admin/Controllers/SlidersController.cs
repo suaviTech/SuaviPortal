@@ -1,68 +1,94 @@
-﻿using IzmPortal.Application.DTOs.Slider;
+﻿using IzmPortal.Admin.Extensions;
+using IzmPortal.Application.DTOs.Slider;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IzmPortal.Admin.Controllers;
 
 [Authorize]
-public class SlidersController : Controller
+public class SlidersController : BaseAdminController
 {
-    private readonly HttpClient _api;
-
     public SlidersController(IHttpClientFactory factory)
+        : base(factory)
     {
-        _api = factory.CreateClient("ApiClient");
     }
 
+    // --------------------------------------------------
     // LIST
+    // --------------------------------------------------
     public async Task<IActionResult> Index(CancellationToken ct)
     {
-        var sliders = await _api.GetFromJsonAsync<List<SliderDto>>(
-            "/api/sliders", ct);
+        var response = await Api.GetAsync("/api/sliders", ct);
 
-        return View(sliders);
+        var failure = await HandleApiFailureAsync(
+            response,
+            "Sliderlar alınamadı.");
+
+        if (failure != null)
+            return failure;
+
+        var items = await response
+            .ReadContentAsync<List<SliderDto>>() ?? new();
+
+        return View(items);
     }
 
+    // --------------------------------------------------
     // UPLOAD (GET)
+    // --------------------------------------------------
     public IActionResult Upload()
     {
         return View();
     }
 
+    // --------------------------------------------------
     // UPLOAD (POST)
-    [HttpPost]
-    [ValidateAntiForgeryToken]
+    // --------------------------------------------------
+    [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Upload(
+        string? title,
         IFormFile file,
         CancellationToken ct)
     {
         if (file == null || file.Length == 0)
         {
-            ModelState.AddModelError("", "Dosya seçilmedi.");
+            ModelState.AddModelError("", "Resim seçilmedi.");
             return View();
         }
 
         using var content = new MultipartFormDataContent();
-        content.Add(new StreamContent(file.OpenReadStream()), "file", file.FileName);
+        content.Add(new StringContent(title ?? string.Empty), "Title");
+        content.Add(new StreamContent(file.OpenReadStream()), "File", file.FileName);
 
-        var response = await _api.PostAsync(
+        var response = await Api.PostAsync(
             "/api/sliders", content, ct);
 
-        if (!response.IsSuccessStatusCode)
-        {
-            ModelState.AddModelError("", "Slider yüklenemedi.");
-            return View();
-        }
+        var failure = await HandleApiFailureAsync(
+            response,
+            "Slider eklenemedi.");
 
-        return RedirectToAction(nameof(Index));
+        if (failure != null)
+            return failure;
+
+        return SuccessAndRedirect("Slider başarıyla eklendi.");
     }
 
+    // --------------------------------------------------
     // DELETE
+    // --------------------------------------------------
     [HttpPost]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
-        await _api.DeleteAsync($"/api/sliders/{id}", ct);
-        return RedirectToAction(nameof(Index));
+        var response = await Api.DeleteAsync(
+            $"/api/sliders/{id}", ct);
+
+        var failure = await HandleApiFailureAsync(
+            response,
+            "Slider silinemedi.");
+
+        if (failure != null)
+            return failure;
+
+        return SuccessAndRedirect("Slider silindi.");
     }
 }
-

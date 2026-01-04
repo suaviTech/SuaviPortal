@@ -1,4 +1,4 @@
-﻿using IzmPortal.Admin.Extensions;
+﻿using System.Net;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IzmPortal.Admin.Controllers;
@@ -14,25 +14,21 @@ public abstract class BaseAdminController : Controller
 
     protected async Task<IActionResult?> HandleApiFailureAsync(
         HttpResponseMessage response,
-        string errorMessage)
+        string defaultMessage)
     {
-        return await response.HandleFailureAsync(this, errorMessage);
+        if (response.IsSuccessStatusCode)
+            return null;
+
+        if (response.StatusCode == HttpStatusCode.Unauthorized)
+            return RedirectToAction("Logout", "Account");
+
+        TempData["Error"] = defaultMessage;
+        return RedirectToAction("Index");
     }
 
-    protected IActionResult SuccessAndRedirect(
-        string message,
-        string action = "Index")
+    protected IActionResult SuccessAndRedirect(string message)
     {
         TempData["Success"] = message;
-        return RedirectToAction(action);
-    }
-
-    protected IActionResult ErrorAndRedirect(
-        string message,
-        string action = "Index")
-    {
-        TempData["Error"] = message;
-        return RedirectToAction(action);
+        return RedirectToAction("Index");
     }
 }
-

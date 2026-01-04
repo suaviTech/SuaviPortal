@@ -8,7 +8,7 @@ namespace IzmPortal.Api.Controllers;
 
 [Authorize(Policy = "AdminAccess")]
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/announcements")]
 public class AnnouncementsController : ControllerBase
 {
     private readonly IAnnouncementService _announcementService;
@@ -18,7 +18,9 @@ public class AnnouncementsController : ControllerBase
         _announcementService = announcementService;
     }
 
+    // --------------------------------------------------
     // GET: api/announcements
+    // --------------------------------------------------
     [HttpGet]
     public async Task<IActionResult> GetAll(CancellationToken ct)
     {
@@ -26,19 +28,23 @@ public class AnnouncementsController : ControllerBase
         return Ok(result.Data);
     }
 
+    // --------------------------------------------------
     // GET: api/announcements/{id}
+    // --------------------------------------------------
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
     {
         var result = await _announcementService.GetByIdAsync(id, ct);
 
-        if (!result.Succeeded)
+        if (!result.Succeeded || result.Data == null)
             return NotFound(result.Message);
 
         return Ok(result.Data);
     }
 
+    // --------------------------------------------------
     // POST: api/announcements
+    // --------------------------------------------------
     [HttpPost]
     public async Task<IActionResult> Create(
         [FromBody] CreateAnnouncementDto dto,
@@ -49,9 +55,10 @@ public class AnnouncementsController : ControllerBase
             ?? User.Identity?.Name;
 
         if (string.IsNullOrWhiteSpace(createdBy))
-            return Unauthorized();
+            return Unauthorized("Kullanıcı bilgisi alınamadı.");
 
-        var result = await _announcementService.CreateAsync(dto, createdBy, ct);
+        var result = await _announcementService
+            .CreateAsync(dto, createdBy, ct);
 
         if (!result.Succeeded)
             return BadRequest(result.Message);
@@ -59,7 +66,9 @@ public class AnnouncementsController : ControllerBase
         return Ok(result.Message);
     }
 
+    // --------------------------------------------------
     // PUT: api/announcements/{id}
+    // --------------------------------------------------
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(
         Guid id,
@@ -69,7 +78,8 @@ public class AnnouncementsController : ControllerBase
         if (id != dto.Id)
             return BadRequest("Id uyuşmazlığı.");
 
-        var result = await _announcementService.UpdateAsync(dto, ct);
+        var result = await _announcementService
+            .UpdateAsync(dto, ct);
 
         if (!result.Succeeded)
             return BadRequest(result.Message);
@@ -77,11 +87,14 @@ public class AnnouncementsController : ControllerBase
         return Ok(result.Message);
     }
 
+    // --------------------------------------------------
     // PUT: api/announcements/{id}/activate
+    // --------------------------------------------------
     [HttpPut("{id:guid}/activate")]
     public async Task<IActionResult> Activate(Guid id, CancellationToken ct)
     {
-        var result = await _announcementService.ActivateAsync(id, ct);
+        var result = await _announcementService
+            .ActivateAsync(id, ct);
 
         if (!result.Succeeded)
             return BadRequest(result.Message);
@@ -89,11 +102,14 @@ public class AnnouncementsController : ControllerBase
         return Ok(result.Message);
     }
 
+    // --------------------------------------------------
     // PUT: api/announcements/{id}/deactivate
+    // --------------------------------------------------
     [HttpPut("{id:guid}/deactivate")]
     public async Task<IActionResult> Deactivate(Guid id, CancellationToken ct)
     {
-        var result = await _announcementService.DeactivateAsync(id, ct);
+        var result = await _announcementService
+            .DeactivateAsync(id, ct);
 
         if (!result.Succeeded)
             return BadRequest(result.Message);
@@ -101,4 +117,3 @@ public class AnnouncementsController : ControllerBase
         return Ok(result.Message);
     }
 }
-

@@ -1,20 +1,43 @@
 ﻿using IzmPortal.Domain.Common;
 
-namespace IzmPortal.Domain.Entities;
-
 public class ApplicationShortcut : BaseEntity
 {
-    public string Title { get; set; } = null!;
+    public string Title { get; private set; } = null!;
+    public string Url { get; private set; } = null!;
+    public string Icon { get; private set; } = null!;
+    public bool IsActive { get; private set; }
+    public int Order { get; private set; }
 
-    public string Icon { get; set; } = null!;
-    // Örnek: "bi bi-envelope", "fa-solid fa-gear"
+    protected ApplicationShortcut() { }
 
-    public string Url { get; set; } = null!;
-    // https://..., /documents, vb.
+    public ApplicationShortcut(
+        string title,
+        string url,
+        string icon,
+        bool isActive,
+        int order)
+    {
+        Title = title;
+        Url = url;
+        Icon = icon;
+        IsActive = isActive;
+        Order = order;
+        CreatedAt = DateTime.UtcNow;
+    }
 
-    public bool IsExternal { get; set; }
+    public void Update(
+        string title,
+        string url,
+        string icon,
+        int order)
+    {
+        Title = title;
+        Url = url;
+        Icon = icon;
+        Order = order;
+        UpdatedAt = DateTime.UtcNow;
+    }
 
-    public bool IsActive { get; set; } = true;
-
-    public int Order { get; set; }
+    public void Activate() => IsActive = true;
+    public void Deactivate() => IsActive = false;
 }

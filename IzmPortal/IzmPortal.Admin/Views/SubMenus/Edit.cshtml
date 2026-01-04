@@ -1,7 +1,8 @@
-﻿@model IzmPortal.Application.DTOs.Menu.UpdateSubMenuDto
+﻿@using IzmPortal.Application.DTOs.Menu
+@using IzmPortal.Application.DTOs.SubMenu
+@model UpdateSubMenuDto
 @{
     ViewData["Title"] = "Alt Menü Düzenle";
-    var menuId = (Guid)ViewBag.MenuId;
 }
 
 <h2>Alt Menü Düzenle</h2>
@@ -10,17 +11,15 @@
     <input type="hidden" asp-for="Id" />
 
     <label>Başlık</label>
-    <input asp-for="Title" required />
+    <input asp-for="Title" class="form-control" required />
 
     <label>Sıra</label>
-    <input asp-for="Order" type="number" required />
+    <input asp-for="Order" type="number" class="form-control" required />
 
     <div class="mt-3">
         <button class="btn btn-primary">Güncelle</button>
         <a asp-action="Index"
-           asp-route-menuId="@menuId"
-           class="btn btn-secondary">
-            İptal
-        </a>
+           asp-route-menuId="@ViewBag.MenuId"
+           class="btn btn-secondary">İptal</a>
     </div>
 </form>

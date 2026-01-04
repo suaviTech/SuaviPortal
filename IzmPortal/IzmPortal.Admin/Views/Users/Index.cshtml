@@ -1,38 +1,198 @@
-﻿@model List<IzmPortal.Admin.ViewModels.Users.UserAdminVm>
+﻿@model IzmPortal.Admin.ViewModels.Users.UsersIndexVm
+@using IzmPortal.Admin.ViewModels.Users
+@using Microsoft.AspNetCore.Mvc.Rendering
 
 @{
-    ViewData["Title"] = "Kullanıcılar";
-    var currentUser = User.Identity?.Name;
+    ViewData["Title"] = "Kullanıcı Yönetimi";
+
+    UserLookupResultVm? lookup = null;
+
+    if (TempData["Lookup"] != null)
+    {
+        lookup = System.Text.Json.JsonSerializer.Deserialize<UserLookupResultVm>(
+            TempData["Lookup"]!.ToString()!,
+            new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+    }
+
+    var lookupEmail = TempData["LookupEmail"]?.ToString();
 }
 
-<h2 class="mb-3">Kullanıcılar</h2>
+<h1>Kullanıcı Yönetimi</h1>
 
-<table class="table table-sm table-striped align-middle">
-    <thead class="table-light">
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<hr />
+
+<h3>Kullanıcı Yetkilendir</h3>
+
+<form asp-action="Lookup" method="post" class="mb-3 d-flex gap-2">
+    <input type="email"
+           name="email"
+           class="form-control w-auto"
+           placeholder="Email adresi giriniz"
+           required />
+    <button type="submit" class="btn btn-secondary">
+        Kontrol Et
+    </button>
+</form>
+
+@if (lookup != null)
+{
+    <div class="card mb-4">
+        <div class="card-header">
+            <strong>Kullanıcı Bilgileri</strong>
+        </div>
+
+        <div class="card-body">
+
+            @* ================= PERSONEL ================= *@
+            @if (lookup.Personal != null)
+            {
+                <h6>Personel Bilgileri</h6>
+                <table class="table table-sm">
+                    <tr><th>Sicil / Kart No</th><td>@(lookup.Personal.Card ?? "-")</td></tr>
+                    <tr><th>Departman</th><td>@(lookup.Personal.Departman ?? "-")</td></tr>
+                    <tr><th>Telefon</th><td>@(lookup.Personal.Phone ?? "-")</td></tr>
+                    <tr><th>T.C. Kimlik</th><td>@lookup.Personal.TcMasked</td></tr>
+                </table>
+            }
+            else
+            {
+                <p class="text-muted">Personel bilgisi bulunamadı.</p>
+            }
+
+            <hr />
+
+            @* ================= PORTAL ================= *@
+            @if (lookup.Identity != null)
+            {
+                <h6>Portal Bilgileri</h6>
+                <table class="table table-sm">
+                    <tr><th>Email</th><td>@lookup.Identity.Email</td></tr>
+                    <tr><th>Roller</th><td>@string.Join(", ", lookup.Identity.Roles)</td></tr>
+                    <tr>
+                        <th>Durum</th>
+                        <td>
+                            @if (lookup.Identity.IsActive)
+                            {
+                                <span class="badge bg-success">Aktif</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">Pasif</span>
+                            }
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Şifre Değiştirme Zorunlu</th>
+                        <td>
+                            @if (lookup.Identity.ForcePasswordChange)
+                            {
+                                <span class="badge bg-warning text-dark">Evet</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Hayır</span>
+                            }
+                        </td>
+                    </tr>
+                </table>
+
+                @* ---- Şifre Reset ---- *@
+                <form asp-action="ResetPassword" method="post" class="mt-2">
+                    <input type="hidden" name="userId" value="@lookup.Identity.Id" />
+                    <button type="submit"
+                            class="btn btn-outline-danger btn-sm"
+                            onclick="return confirm('Kullanıcının şifresi sıfırlansın mı?');">
+                        Şifreyi Sıfırla
+                    </button>
+                </form>
+
+                @* ---- Rol Değiştir (DOĞRU YÖNTEM) ---- *@
+               
+                var selectedRole = lookup.Identity.Roles.FirstOrDefault() ?? "Manager";
+
+                var roleItems = new List<SelectListItem>
+                {
+                new SelectListItem("Manager", "Manager"),
+                new SelectListItem("SuperAdmin", "SuperAdmin")
+                };
+
+                <form asp-action="ChangeRole" method="post" class="d-flex gap-2 mt-2">
+                    <input type="hidden" name="userId" value="@lookup.Identity.Id" />
+
+                    <select name="role"
+                            class="form-select form-select-sm w-auto"
+                            asp-items="@(new SelectList(roleItems, "Value", "Text", selectedRole))">
+                    </select>
+
+                    <button type="submit" class="btn btn-warning btn-sm">
+                        Rolü Güncelle
+                    </button>
+                </form>
+            }
+            else
+            {
+                <p class="text-muted">Portal sisteminde kullanıcı kaydı yok.</p>
+            }
+        </div>
+
+        <div class="card-footer">
+            @if (lookup.Identity == null && lookup.ExistsInPersonal)
+            {
+                <form asp-action="AuthorizeFromPersonal" method="post" class="d-flex gap-2">
+                    <input type="hidden" name="email" value="@lookupEmail" />
+
+                    <select name="role" class="form-select form-select-sm w-auto" required>
+                        <option value="">Rol Seçiniz</option>
+                        <option value="Manager">Manager</option>
+                        <option value="SuperAdmin">SuperAdmin</option>
+                    </select>
+
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        Yetkilendir
+                    </button>
+                </form>
+            }
+            else if (lookup.Identity != null)
+            {
+                <span class="text-muted">
+                    Bu kullanıcı zaten portal sisteminde tanımlı.
+                </span>
+            }
+        </div>
+    </div>
+}
+
+<hr />
+
+<h3>Mevcut Kullanıcılar</h3>
+
+<table class="table table-bordered table-sm">
+    <thead>
         <tr>
-            <th>Kullanıcı</th>
             <th>Email</th>
             <th>Roller</th>
             <th>Durum</th>
-            <th class="text-end">İşlemler</th>
         </tr>
     </thead>
     <tbody>
-        @foreach (var u in Model)
+        @foreach (var u in Model.Users)
         {
-            var isSelf = u.UserName == currentUser;
-
             <tr>
-                <td class="fw-semibold">@u.UserName</td>
-                <td class="text-muted">@u.Email</td>
-
-                <td>
-                    @foreach (var role in u.Roles)
-                    {
-                        <span class="badge bg-secondary me-1">@role</span>
-                    }
-                </td>
-
+                <td>@u.Email</td>
+                <td>@string.Join(", ", u.Roles)</td>
                 <td>
                     @if (u.IsActive)
                     {
@@ -43,71 +203,7 @@
                         <span class="badge bg-danger">Pasif</span>
                     }
                 </td>
-
-                <td class="text-end">
-
-                    <!-- AKTİF / PASİF -->
-                    <form asp-action="@(u.IsActive ? "Deactivate" : "Activate")"
-                          method="post"
-                          class="d-inline"
-                          onsubmit="return confirm('Bu işlemi onaylıyor musunuz?')">
-                        <input type="hidden" name="id" value="@u.Id" />
-                        <button class="btn btn-sm btn-outline-secondary"
-                                @(isSelf ? "disabled" : "")>
-                            @(u.IsActive ? "Pasif Yap" : "Aktif Yap")
-                        </button>
-                    </form>
-
-                    <!-- RESET PASSWORD -->
-                    <form asp-action="ResetPassword"
-                          method="post"
-                          class="d-inline ms-1"
-                          onsubmit="return confirm('Şifre resetlensin mi?')">
-                        <input type="hidden" name="id" value="@u.Id" />
-                        <button class="btn btn-sm btn-outline-warning"
-                                @(isSelf ? "disabled" : "")>
-                            Şifre Reset
-                        </button>
-                    </form>
-
-                    <!-- CHANGE ROLE -->
-                    <form asp-action="ChangeRole"
-                          method="post"
-                          class="d-inline ms-1">
-                        <input type="hidden" name="id" value="@u.Id" />
-
-                        <select name="role"
-                                class="form-select form-select-sm d-inline w-auto"
-                                onchange="this.form.submit()"
-                                @(isSelf ? "disabled" : "")>
-                            <option disabled>Rol Seç</option>
-
-                            <option value="SuperAdmin"
-                                    selected="@u.Roles.Contains("SuperAdmin")">
-                                SuperAdmin
-                            </option>
-
-                            <option value="Manager"
-                                    selected="@u.Roles.Contains("Manager")">
-                                Manager
-                            </option>
-
-                            <option value="User"
-                                    selected="@u.Roles.Contains("User")">
-                                User
-                            </option>
-                        </select>
-                    </form>
-
-                </td>
             </tr>
         }
     </tbody>
 </table>
-
-@if (!Model.Any())
-{
-    <div class="alert alert-info">
-        Henüz kullanıcı bulunmuyor.
-    </div>
-}

@@ -2,6 +2,7 @@
 using IzmPortal.Admin.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
 
 namespace IzmPortal.Admin.Controllers;
 
@@ -15,13 +16,13 @@ public class AuditLogsController : BaseAdminController
 
     public async Task<IActionResult> Index(DateTime? from, DateTime? to)
     {
-        var query = new List<string>();
-        if (from.HasValue) query.Add($"from={from:yyyy-MM-dd}");
-        if (to.HasValue) query.Add($"to={to:yyyy-MM-dd}");
+        var query = new Dictionary<string, string?>();
 
-        var url = "/api/audit-logs";
-        if (query.Any())
-            url += "?" + string.Join("&", query);
+
+        if (from.HasValue) query["from"] = from.Value.ToString("yyyy-MM-dd");
+        if (to.HasValue) query["to"] = to.Value.ToString("yyyy-MM-dd");
+
+        var url = QueryHelpers.AddQueryString("/api/audit-logs", query);
 
         var response = await Api.GetAsync(url);
 

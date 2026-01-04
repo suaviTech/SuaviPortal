@@ -1,36 +1,89 @@
 ﻿@{
-    var current = ViewContext.RouteData.Values["controller"]?.ToString();
+    var currentController =
+        ViewContext.RouteData.Values["controller"]?.ToString();
 }
 
-@* Dashboard – herkes *@
-<a asp-controller="Home"
-   asp-action="Index"
-   class="@(current == "Home" ? "active" : "")">
-    Dashboard
-</a>
+<nav class="sidebar-menu">
 
-@* Uygulama Kısayolları – SuperAdmin + Manager *@
-@if (User.IsInRole("SuperAdmin") || User.IsInRole("Manager"))
-{
-    <a asp-controller="ApplicationShortcuts"
+    <!-- DASHBOARD -->
+    <a asp-controller="Home"
        asp-action="Index"
-       class="@(current == "ApplicationShortcuts" ? "active" : "")">
-        Uygulama Kısayolları
+       class="@(currentController == "Home" ? "active" : "")">
+        Dashboard
     </a>
-}
 
-@* Kullanıcı Yönetimi – sadece SuperAdmin *@
-@if (User.IsInRole("SuperAdmin"))
-{
+    <!-- DUYURULAR -->
+    <a asp-controller="Announcements"
+       asp-action="Index"
+       class="@(currentController == "Announcements" ? "active" : "")">
+        Duyurular
+    </a>
+
+    <!-- KATEGORİLER -->
+    <a asp-controller="Categories"
+       asp-action="Index"
+       class="@(currentController == "Categories" ? "active" : "")">
+        Kategoriler
+    </a>
+
+    <!-- ===================== -->
+    <!-- İÇERİK YÖNETİMİ -->
+    <!-- ===================== -->
+    <div class="sidebar-group">
+        <div class="sidebar-group-title">
+            İçerik Yönetimi
+        </div>
+
+        <!-- SLIDER -->
+        <a asp-controller="Sliders"
+           asp-action="Index"
+           class="@(currentController == "Sliders" ? "active" : "")">
+            Slider Yönetimi
+        </a>
+
+
+        <!-- UYGULAMALAR -->
+        <a asp-controller="ApplicationShortcuts"
+           asp-action="Index"
+           class="@(currentController == "ApplicationShortcuts" ? "active" : "")">
+            Uygulama Kısayolları
+        </a>
+
+    </div>
+
+    <!-- ===================== -->
+    <!-- MENÜ YÖNETİMİ -->
+    <!-- ===================== -->
+    <div class="sidebar-group">
+        <div class="sidebar-group-title">
+            Menü Yönetimi
+        </div>
+
+        <a asp-controller="Menus"
+           asp-action="Index"
+           class="@(currentController == "Menus" ? "active" : "")">
+            Menüler
+        </a>
+
+        <a asp-controller="SubMenus"
+           asp-action="Index"
+           class="@(currentController == "SubMenus" ? "active" : "")">
+            Alt Menüler
+        </a>
+    </div>
+
+    <!-- KULLANICI YÖNETİMİ -->
     <a asp-controller="Users"
        asp-action="Index"
-       class="@(current == "Users" ? "active" : "")">
+       class="@(currentController == "Users" ? "active" : "")">
         Kullanıcı Yönetimi
     </a>
 
+    <!-- AUDIT -->
     <a asp-controller="AuditLogs"
        asp-action="Index"
-       class="@(current == "AuditLogs" ? "active" : "")">
+       class="@(currentController == "AuditLogs" ? "active" : "")">
         Audit Logları
     </a>
-}
+
+</nav>

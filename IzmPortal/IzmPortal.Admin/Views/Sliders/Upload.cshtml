@@ -2,14 +2,29 @@
     ViewData["Title"] = "Slider Yükle";
 }
 
-<h2>Slider Yükle</h2>
+<h2>Yeni Slider</h2>
 
 <form method="post" enctype="multipart/form-data">
-    <label>Görsel Dosyası</label>
-    <input type="file" name="file" accept="image/*" required />
+    <div class="mb-3">
+        <label class="form-label">Başlık (opsiyonel)</label>
+        <input name="title"
+               class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Resim</label>
+        <input type="file"
+               name="file"
+               class="form-control"
+               accept="image/*"
+               required />
+    </div>
 
     <div class="mt-3">
         <button class="btn btn-primary">Yükle</button>
-        <a asp-action="Index" class="btn btn-secondary">İptal</a>
+        <a asp-action="Index"
+           class="btn btn-secondary">
+            İptal
+        </a>
     </div>
 </form>

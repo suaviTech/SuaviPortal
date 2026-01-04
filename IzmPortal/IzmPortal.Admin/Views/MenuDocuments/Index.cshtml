@@ -1,56 +1,173 @@
-﻿@model List<IzmPortal.Application.DTOs.Menu.MenuDocumentDto>
+﻿@model List<IzmPortal.Application.DTOs.MenuDocument.MenuDocumentDto>
 
 @{
-    ViewData["Title"] = "Menü Dokümanları";
-    var subMenuId = (Guid)ViewBag.SubMenuId;
+    ViewData["Title"] = "Dokümanlar";
+    Guid subMenuId = ViewBag.SubMenuId;
 }
 
-<h2>Menü Dokümanları</h2>
+<div class="content-header">
+    <h2 class="page-title">Dokümanlar</h2>
+</div>
 
-<a asp-action="Upload"
-   asp-route-subMenuId="@subMenuId"
-   class="btn btn-primary mb-3">
-    Yeni PDF Yükle
-</a>
+<div class="content-body">
 
-<table>
-    <thead>
-        <tr>
-            <th>Başlık</th>
-            <th>Dosya</th>
-            <th>Tarih</th>
-            <th style="width:160px">İşlemler</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var d in Model)
-        {
-            <tr>
-                <td>@d.Title</td>
-                <td>
-                    <a href="@d.FileUrl" target="_blank">
-                        PDF Aç
-                    </a>
-                </td>
-                <td>@d.CreatedAt.ToString("dd.MM.yyyy")</td>
-                <td class="text-center">
-                    <form asp-action="Delete"
-                          asp-route-id="@d.Id"
-                          asp-route-subMenuId="@subMenuId"
-                          method="post"
-                          onsubmit="return confirm('Silinsin mi?');">
-                        <button class="btn btn-danger">Sil</button>
-                    </form>
-                </td>
-            </tr>
+    <div class="mb-3">
+        <a asp-action="Upload"
+           asp-route-subMenuId="@subMenuId"
+           class="btn btn-primary">
+            + Yeni Doküman Yükle
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body p-0">
+
+            <table class="table table-bordered table-sm mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th>Başlık</th>
+                        <th style="width:140px">Oluşturma</th>
+                        <th style="width:90px">Durum</th>
+                        <th style="width:260px" class="text-center">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">
+                                Doküman bulunamadı.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var d in Model)
+                        {
+                            <tr>
+                                <td>@d.Title</td>
+
+                                <td>
+                                    @d.CreatedAt.ToLocalTime()
+                                    .ToString("dd.MM.yyyy")
+                                </td>
+
+                                <td class="text-center">
+                                    @if (d.IsActive)
+                                    {
+                                        <span class="badge bg-success">Aktif</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Pasif</span>
+                                    }
+                                </td>
+
+                                <td class="text-center">
+
+                                    <button type="button"
+                                            class="btn btn-info btn-sm"
+                                            onclick="openPdf('@d.FilePath', '@d.Title')">
+                                        Görüntüle
+                                    </button>
+
+                                    <a asp-action="Edit"
+                                       asp-route-id="@d.Id"
+                                       asp-route-subMenuId="@subMenuId"
+                                       class="btn btn-warning btn-sm">
+                                        Düzenle
+                                    </a>
+
+                                    @if (d.IsActive)
+                                    {
+                                        <form asp-action="Deactivate"
+                                              asp-route-id="@d.Id"
+                                              asp-route-subMenuId="@subMenuId"
+                                              method="post"
+                                              class="d-inline">
+                                            <button class="btn btn-secondary btn-sm">
+                                                Pasif
+                                            </button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <form asp-action="Activate"
+                                              asp-route-id="@d.Id"
+                                              asp-route-subMenuId="@subMenuId"
+                                              method="post"
+                                              class="d-inline">
+                                            <button class="btn btn-success btn-sm">
+                                                Aktif
+                                            </button>
+                                        </form>
+                                    }
+
+                                    <form asp-action="Delete"
+                                          asp-route-id="@d.Id"
+                                          asp-route-subMenuId="@subMenuId"
+                                          method="post"
+                                          class="d-inline"
+                                          onsubmit="return confirm('Silinsin mi?');">
+                                        <button class="btn btn-danger btn-sm">
+                                            Sil
+                                        </button>
+                                    </form>
+
+                                </td>
+
+                            </tr>
+                        }
+                    }
+
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+</div>
+
+<!-- ================= PDF MODAL ================= -->
+<div class="modal fade" id="pdfModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="pdfTitle"></h5>
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Close">
+                </button>
+            </div>
+
+            <div class="modal-body p-0" style="height:80vh;">
+                <iframe id="pdfFrame"
+                        src=""
+                        style="width:100%; height:100%; border:none;">
+                </iframe>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openPdf(path, title) {
+            const frame = document.getElementById("pdfFrame");
+            const modalEl = document.getElementById("pdfModal");
+
+            document.getElementById("pdfTitle").innerText = title;
+            frame.src = path;
+
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+
+            modalEl.addEventListener('hidden.bs.modal', function () {
+                frame.src = "";
+            }, { once: true });
         }
-    </tbody>
-</table>
-
-<a asp-controller="SubMenus"
-   asp-action="Index"
-   asp-route-menuId="@subMenuId"
-   class="btn btn-secondary mt-3">
-    ← Alt Menüye Dön
-</a>
-
+    </script>
+}

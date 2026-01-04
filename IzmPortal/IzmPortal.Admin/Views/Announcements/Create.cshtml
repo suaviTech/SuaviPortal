@@ -6,26 +6,50 @@
         ViewBag.Categories as List<IzmPortal.Application.DTOs.Category.CategoryDto>;
 }
 
-<h2>Yeni Duyuru</h2>
-
-<form method="post">
-    <label>Başlık</label>
-    <input asp-for="Title" required />
-
-    <label>İçerik</label>
-    <textarea asp-for="Content" rows="6"></textarea>
-
-    <label>Kategori</label>
-    <select asp-for="CategoryId" required>
-        <option value="">Seçiniz</option>
-        @foreach (var c in categories!)
-        {
-            <option value="@c.Id">@c.Name</option>
-        }
-    </select>
-
-    <div class="mt-3">
-        <button type="submit" class="btn btn-primary">Kaydet</button>
-        <a asp-action="Index" class="btn btn-secondary">İptal</a>
+<div class="admin-card">
+    <h3>Yeni Duyuru</h3>
+    <div class="subtitle">
+        Portalda yayınlanacak yeni bir duyuru oluşturun.
     </div>
-</form>
+
+    <form method="post">
+        <div class="mb-3">
+            <label class="form-label">Başlık</label>
+            <input asp-for="Title" class="form-control" required />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">İçerik</label>
+            <textarea asp-for="Content"
+                      rows="6"
+                      class="form-control"></textarea>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Kategori</label>
+            <select asp-for="CategoryId" class="form-select" required>
+                <option value="">Seçiniz</option>
+                @foreach (var c in categories!)
+                {
+                    <option value="@c.Id">@c.Name</option>
+                }
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">PDF URL (opsiyonel)</label>
+            <input asp-for="PdfUrl"
+                   class="form-control"
+                   placeholder="/docs/duyurular/ornek.pdf" />
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                Kaydet
+            </button>
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                İptal
+            </a>
+        </div>
+    </form>
+</div>

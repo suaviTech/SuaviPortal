@@ -4,13 +4,10 @@ using IzmPortal.Application.Services;
 using IzmPortal.Infrastructure.Identity;
 using IzmPortal.Infrastructure.Persistence;
 using IzmPortal.Infrastructure.Repositories;
-using Microsoft.AspNetCore.Identity;
+using IzmPortal.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using IzmPortal.Infrastructure.Services;
-
-
 
 namespace IzmPortal.Infrastructure;
 
@@ -20,46 +17,41 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        // ============================
         // DbContexts
+        // ============================
         services.AddDbContext<PortalDbContext>(options =>
-            options.UseSqlServer(configuration.GetConnectionString("PortalConnection")));
+            options.UseSqlServer(
+                configuration.GetConnectionString("PortalConnection")));
 
         services.AddDbContext<PersonalDbContext>(options =>
-            options.UseSqlServer(configuration.GetConnectionString("PersonalConnection")));
+            options.UseSqlServer(
+                configuration.GetConnectionString("PersonalConnection")));
 
-        // 🔐 IDENTITY (EKSİK OLAN KISIM BUYDU)
-        services.AddIdentity<ApplicationUser, IdentityRole>(options =>
-        {
-            options.Password.RequiredLength = 4;
-            options.Password.RequireDigit = true;
-
-            options.Password.RequireLowercase = false;
-            options.Password.RequireUppercase = false;
-            options.Password.RequireNonAlphanumeric = false;
-
-            options.Password.RequiredUniqueChars = 1;
-        })
-.AddEntityFrameworkStores<PortalDbContext>()
-.AddDefaultTokenProviders();
-
-
-
+        // ============================
         // Repositories
+        // ============================
         services.AddScoped<ICategoryRepository, CategoryRepository>();
-        services.AddScoped<IAnnouncementRepository, AnnouncementRepository>();
-
-        services.AddScoped<ICategoryService, CategoryService>();
-        services.AddScoped<IAnnouncementService, AnnouncementService>();
-
-        services.AddScoped<IFileStorageService, LocalFileStorageService>();
-
+        services.AddScoped<IMenuRepository, MenuRepository>();
+        services.AddScoped<ISubMenuRepository, SubMenuRepository>();
+        services.AddScoped<IMenuDocumentRepository, MenuDocumentRepository>();
+        services.AddScoped<IApplicationShortcutRepository, ApplicationShortcutRepository>();
         services.AddScoped<ISliderRepository, SliderRepository>();
+
+        // ============================
+        // Services (Domain / Application)
+        // ============================
+        services.AddScoped<IAnnouncementService, AnnouncementService>();
+        services.AddScoped<ICategoryService, CategoryService>();
+        services.AddScoped<IMenuService, MenuService>();
+        services.AddScoped<ISubMenuService, SubMenuService>();
+        services.AddScoped<IMenuDocumentService, MenuDocumentService>();
+        services.AddScoped<IApplicationShortcutService, ApplicationShortcutService>();
         services.AddScoped<ISliderService, SliderService>();
 
-        services.AddScoped<IApplicationShortcutRepository, ApplicationShortcutRepository>();
-        services.AddScoped<IApplicationShortcutService, ApplicationShortcutService>();
+        services.AddScoped<IAuditService, AuditService>();
+        services.AddScoped<IFileStorageService, LocalFileStorageService>();
 
         return services;
     }
 }
-

@@ -7,7 +7,6 @@ namespace IzmPortal.Api.Controllers;
 
 [ApiController]
 [Route("api/categories")]
-[Authorize(Policy = "AdminAccess")]
 public class CategoriesController : ControllerBase
 {
     private readonly ICategoryService _categoryService;
@@ -17,20 +16,33 @@ public class CategoriesController : ControllerBase
         _categoryService = categoryService;
     }
 
-    // --------------------
-    // GET ALL (ADMIN)
-    // --------------------
+    // ==================================================
+    // PUBLIC — SADECE AKTİF KATEGORİLER
+    // ==================================================
     [HttpGet]
-    public async Task<IActionResult> GetAll(CancellationToken ct)
+    [AllowAnonymous]
+    public async Task<IActionResult> GetPublic(CancellationToken ct)
+    {
+        var result = await _categoryService.GetPublicAsync(ct);
+        return Ok(result.Data);
+    }
+
+    // ==================================================
+    // ADMIN — TÜM KATEGORİLER
+    // ==================================================
+    [HttpGet("admin")]
+    [Authorize(Policy = "AdminAccess")]
+    public async Task<IActionResult> GetAllAdmin(CancellationToken ct)
     {
         var result = await _categoryService.GetAllAsync(ct);
         return Ok(result.Data);
     }
 
-    // --------------------
+    // ==================================================
     // GET BY ID (ADMIN)
-    // --------------------
+    // ==================================================
     [HttpGet("{id:guid}")]
+    [Authorize(Policy = "AdminAccess")]
     public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
     {
         var result = await _categoryService.GetByIdAsync(id, ct);
@@ -41,10 +53,11 @@ public class CategoriesController : ControllerBase
         return Ok(result.Data);
     }
 
-    // --------------------
+    // ==================================================
     // CREATE (ADMIN)
-    // --------------------
+    // ==================================================
     [HttpPost]
+    [Authorize(Policy = "AdminAccess")]
     public async Task<IActionResult> Create(
         [FromBody] CreateCategoryDto dto,
         CancellationToken ct)
@@ -57,13 +70,14 @@ public class CategoriesController : ControllerBase
         if (!result.Succeeded)
             return BadRequest(result.Message);
 
-        return Ok("Kategori oluşturuldu.");
+        return Ok(new { message = "Kategori oluşturuldu." });
     }
 
-    // --------------------
+    // ==================================================
     // UPDATE (ADMIN)
-    // --------------------
+    // ==================================================
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = "AdminAccess")]
     public async Task<IActionResult> Update(
         Guid id,
         [FromBody] UpdateCategoryDto dto,
@@ -80,6 +94,36 @@ public class CategoriesController : ControllerBase
         if (!result.Succeeded)
             return BadRequest(result.Message);
 
-        return Ok("Kategori güncellendi.");
+        return Ok(new { message = "Kategori güncellendi." });
+    }
+
+    // ==================================================
+    // ACTIVATE (ADMIN)
+    // ==================================================
+    [HttpPut("{id:guid}/activate")]
+    [Authorize(Policy = "AdminAccess")]
+    public async Task<IActionResult> Activate(Guid id, CancellationToken ct)
+    {
+        var result = await _categoryService.ActivateAsync(id, ct);
+
+        if (!result.Succeeded)
+            return BadRequest(result.Message);
+
+        return Ok(new { message = "Kategori aktifleştirildi." });
+    }
+
+    // ==================================================
+    // DEACTIVATE (ADMIN)
+    // ==================================================
+    [HttpPut("{id:guid}/deactivate")]
+    [Authorize(Policy = "AdminAccess")]
+    public async Task<IActionResult> Deactivate(Guid id, CancellationToken ct)
+    {
+        var result = await _categoryService.DeactivateAsync(id, ct);
+
+        if (!result.Succeeded)
+            return BadRequest(result.Message);
+
+        return Ok(new { message = "Kategori pasifleştirildi." });
     }
 }

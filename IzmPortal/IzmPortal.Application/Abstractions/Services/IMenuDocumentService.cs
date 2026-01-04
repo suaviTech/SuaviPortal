@@ -1,22 +1,23 @@
 ﻿using IzmPortal.Application.Common;
-using IzmPortal.Application.DTOs.Menu;
+using IzmPortal.Application.DTOs.MenuDocument;
 
 namespace IzmPortal.Application.Abstractions.Services;
 
 public interface IMenuDocumentService
 {
-    Task<Result<List<MenuDocumentDto>>> GetBySubMenuIdAsync(
+    Task<Result<List<MenuDocumentDto>>> GetBySubMenuAsync(
         Guid subMenuId,
         CancellationToken ct = default);
 
-    Task<Result> UploadAsync(
-        Guid subMenuId,
-        string title,
-        Stream fileStream,
-        string fileName,
+    Task<Result> CreateAsync(
+        CreateMenuDocumentDto dto,
+        string filePath,
         CancellationToken ct = default);
 
-    Task<Result> DeleteAsync(
-        Guid id,
+    Task<Result> UpdateAsync(
+        UpdateMenuDocumentDto dto,
         CancellationToken ct = default);
+
+    Task<Result> ActivateAsync(Guid id, CancellationToken ct = default);
+    Task<Result> DeactivateAsync(Guid id, CancellationToken ct = default);
 }

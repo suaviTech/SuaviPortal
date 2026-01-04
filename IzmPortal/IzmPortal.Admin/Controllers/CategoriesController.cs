@@ -1,56 +1,88 @@
-﻿using IzmPortal.Application.DTOs.Category;
+﻿using IzmPortal.Admin.Extensions;
+using IzmPortal.Application.DTOs.Category;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IzmPortal.Admin.Controllers;
 
 [Authorize]
-public class CategoriesController : Controller
+public class CategoriesController : BaseAdminController
 {
-    private readonly HttpClient _api;
-
     public CategoriesController(IHttpClientFactory factory)
+        : base(factory)
     {
-        _api = factory.CreateClient("ApiClient");
     }
 
+    // --------------------------------------------------
     // LIST
+    // --------------------------------------------------
     public async Task<IActionResult> Index(CancellationToken ct)
     {
-        var items = await _api.GetFromJsonAsync<List<CategoryDto>>(
-            "/api/categories", ct);
+        var response = await Api.GetAsync("/api/categories", ct);
+
+        var failure = await HandleApiFailureAsync(
+            response,
+            "Kategoriler alınamadı.");
+
+        if (failure != null)
+            return failure;
+
+        var items = await response
+            .ReadContentAsync<List<CategoryDto>>() ?? new();
 
         return View(items);
     }
 
-    // CREATE
+    // --------------------------------------------------
+    // CREATE (GET)
+    // --------------------------------------------------
     public IActionResult Create()
     {
         return View();
     }
 
+    // --------------------------------------------------
+    // CREATE (POST)
+    // --------------------------------------------------
     [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(CreateCategoryDto dto, CancellationToken ct)
+    public async Task<IActionResult> Create(
+        CreateCategoryDto dto,
+        CancellationToken ct)
     {
         if (!ModelState.IsValid)
             return View(dto);
 
-        var res = await _api.PostAsJsonAsync("/api/categories", dto, ct);
+        var response = await Api.PostAsJsonAsync(
+            "/api/categories", dto, ct);
 
-        if (!res.IsSuccessStatusCode)
-        {
-            ModelState.AddModelError("", "Kategori oluşturulamadı.");
-            return View(dto);
-        }
+        var failure = await HandleApiFailureAsync(
+            response,
+            "Kategori oluşturulamadı.");
 
-        return RedirectToAction(nameof(Index));
+        if (failure != null)
+            return failure;
+
+        return SuccessAndRedirect(
+            "Kategori başarıyla oluşturuldu.");
     }
 
-    // EDIT
+    // --------------------------------------------------
+    // EDIT (GET)
+    // --------------------------------------------------
     public async Task<IActionResult> Edit(Guid id, CancellationToken ct)
     {
-        var item = await _api.GetFromJsonAsync<CategoryDto>(
+        var response = await Api.GetAsync(
             $"/api/categories/{id}", ct);
+
+        var failure = await HandleApiFailureAsync(
+            response,
+            "Kategori bulunamadı.");
+
+        if (failure != null)
+            return failure;
+
+        var item = await response
+            .ReadContentAsync<CategoryDto>();
 
         if (item == null)
             return NotFound();
@@ -62,21 +94,28 @@ public class CategoriesController : Controller
         });
     }
 
+    // --------------------------------------------------
+    // EDIT (POST)
+    // --------------------------------------------------
     [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(UpdateCategoryDto dto, CancellationToken ct)
+    public async Task<IActionResult> Edit(
+        UpdateCategoryDto dto,
+        CancellationToken ct)
     {
         if (!ModelState.IsValid)
             return View(dto);
 
-        var res = await _api.PutAsJsonAsync(
+        var response = await Api.PutAsJsonAsync(
             $"/api/categories/{dto.Id}", dto, ct);
 
-        if (!res.IsSuccessStatusCode)
-        {
-            ModelState.AddModelError("", "Kategori güncellenemedi.");
-            return View(dto);
-        }
+        var failure = await HandleApiFailureAsync(
+            response,
+            "Kategori güncellenemedi.");
 
-        return RedirectToAction(nameof(Index));
+        if (failure != null)
+            return failure;
+
+        return SuccessAndRedirect(
+            "Kategori başarıyla güncellendi.");
     }
 }
