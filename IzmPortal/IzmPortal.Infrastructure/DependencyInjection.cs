@@ -1,9 +1,5 @@
-﻿using IzmPortal.Application.Abstractions.Repositories;
-using IzmPortal.Application.Abstractions.Services;
-using IzmPortal.Application.Services;
-using IzmPortal.Infrastructure.Identity;
+﻿using IzmPortal.Application.Abstractions.Services;
 using IzmPortal.Infrastructure.Persistence;
-using IzmPortal.Infrastructure.Repositories;
 using IzmPortal.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -28,15 +24,8 @@ public static class DependencyInjection
             options.UseSqlServer(
                 configuration.GetConnectionString("PersonalConnection")));
 
-        // ============================
-        // Repositories
-        // ============================
-        services.AddScoped<ICategoryRepository, CategoryRepository>();
-        services.AddScoped<IMenuRepository, MenuRepository>();
-        services.AddScoped<ISubMenuRepository, SubMenuRepository>();
-        services.AddScoped<IMenuDocumentRepository, MenuDocumentRepository>();
-        services.AddScoped<IApplicationShortcutRepository, ApplicationShortcutRepository>();
-        services.AddScoped<ISliderRepository, SliderRepository>();
+ 
+ 
 
         // ============================
         // Services (Domain / Application)
@@ -48,7 +37,6 @@ public static class DependencyInjection
         services.AddScoped<IMenuDocumentService, MenuDocumentService>();
         services.AddScoped<IApplicationShortcutService, ApplicationShortcutService>();
         services.AddScoped<ISliderService, SliderService>();
-
         services.AddScoped<IAuditService, AuditService>();
         services.AddScoped<IFileStorageService, LocalFileStorageService>();
 

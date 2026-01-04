@@ -1,58 +1,39 @@
-﻿using IzmPortal.Application.Abstractions.Repositories;
-using IzmPortal.Application.Abstractions.Services;
+﻿using IzmPortal.Application.Abstractions.Services;
 using IzmPortal.Application.Common;
 using IzmPortal.Application.DTOs.Menu;
-using IzmPortal.Domain.Entities;
-using IzmPortal.Domain.Enums;
-using IzmPortal.Application.DTOs.SubMenu;
+using IzmPortal.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 
-namespace IzmPortal.Infrastructure.Services;
 
 public class MenuService : IMenuService
 {
-    private readonly IMenuRepository _menuRepository;
-    private readonly IAuditService _audit;
+    private readonly PortalDbContext _db;
 
-    public MenuService(
-        IMenuRepository menuRepository,
-        IAuditService audit)
+    public MenuService(PortalDbContext db)
     {
-        _menuRepository = menuRepository;
-        _audit = audit;
+        _db = db;
     }
-
-    // ================= ADMIN =================
 
     public async Task<Result<List<MenuDto>>> GetAllAsync(CancellationToken ct = default)
     {
-        var menus = await _menuRepository.GetAllAsync(ct);
-
-        var list = menus
+        var items = await _db.Menus
+            .AsNoTracking()
             .OrderBy(x => x.Order)
-            .Select(m => new MenuDto
+            .Select(x => new MenuDto
             {
-                Id = m.Id,
-                Title = m.Title,
-                Order = m.Order,
-                IsActive = m.IsActive,
-                SubMenus = m.SubMenus
-                    .Where(sm => sm.IsActive)
-                    .OrderBy(sm => sm.Order)
-                    .Select(sm => new SubMenuDto
-                    {
-                        Id = sm.Id,
-                        Title = sm.Title,
-                        Order = sm.Order,
-                        IsActive = sm.IsActive
-                    }).ToList()
-            }).ToList();
+                Id = x.Id,
+                Title = x.Title,
+                Order = x.Order,
+                IsActive = x.IsActive
+            })
+            .ToListAsync(ct);
 
-        return Result<List<MenuDto>>.Success(list);
+        return Result<List<MenuDto>>.Success(items);
     }
 
     public async Task<Result<MenuDto>> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
-        var menu = await _menuRepository.GetByIdAsync(id, ct);
+        var menu = await _db.Menus.FindAsync(new object[] { id }, ct);
 
         if (menu == null)
             return Result<MenuDto>.Failure("Menü bulunamadı.");
@@ -68,57 +49,53 @@ public class MenuService : IMenuService
 
     public async Task<Result> CreateAsync(CreateMenuDto dto, CancellationToken ct = default)
     {
-        var menu = new Menu(dto.Title, dto.Order);
+        var nextOrder = await _db.Menus.AnyAsync(ct)
+            ? await _db.Menus.MaxAsync(x => x.Order, ct) + 1
+            : 1;
 
-        await _menuRepository.AddAsync(menu, ct);
+        var menu = new Menu(dto.Title, nextOrder);
 
-        await _audit.LogAsync(
-            AuditAction.Create,
-            AuditEntity.Menu,
-            menu.Id.ToString());
+        _db.Menus.Add(menu);
+        await _db.SaveChangesAsync(ct);
 
         return Result.Success("Menü oluşturuldu.");
     }
 
     public async Task<Result> UpdateAsync(UpdateMenuDto dto, CancellationToken ct = default)
     {
-        var menu = await _menuRepository.GetByIdAsync(dto.Id, ct);
+        var menu = await _db.Menus.FindAsync(new object[] { dto.Id }, ct);
 
         if (menu == null)
             return Result.Failure("Menü bulunamadı.");
 
-        menu.Update(dto.Title, dto.Order);
-        await _menuRepository.UpdateAsync(menu, ct);
+        // Order değişmiyor
+        menu.Update(dto.Title, menu.Order);
 
-        await _audit.LogAsync(
-            AuditAction.Update,
-            AuditEntity.Menu,
-            menu.Id.ToString());
-
+        await _db.SaveChangesAsync(ct);
         return Result.Success("Menü güncellendi.");
     }
 
     public async Task<Result> ActivateAsync(Guid id, CancellationToken ct = default)
     {
-        var menu = await _menuRepository.GetByIdAsync(id, ct);
+        var menu = await _db.Menus.FindAsync(new object[] { id }, ct);
         if (menu == null)
             return Result.Failure("Menü bulunamadı.");
 
         menu.Activate();
-        await _menuRepository.UpdateAsync(menu, ct);
+        await _db.SaveChangesAsync(ct);
 
-        return Result.Success();
+        return Result.Success("Menü aktif edildi.");
     }
 
     public async Task<Result> DeactivateAsync(Guid id, CancellationToken ct = default)
     {
-        var menu = await _menuRepository.GetByIdAsync(id, ct);
+        var menu = await _db.Menus.FindAsync(new object[] { id }, ct);
         if (menu == null)
             return Result.Failure("Menü bulunamadı.");
 
         menu.Deactivate();
-        await _menuRepository.UpdateAsync(menu, ct);
+        await _db.SaveChangesAsync(ct);
 
-        return Result.Success();
+        return Result.Success("Menü pasif edildi.");
     }
 }

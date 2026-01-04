@@ -1,86 +1,83 @@
-﻿using IzmPortal.Application.Abstractions.Repositories;
-using IzmPortal.Application.Abstractions.Services;
+﻿using IzmPortal.Application.Abstractions.Services;
 using IzmPortal.Application.Common;
 using IzmPortal.Application.DTOs.SubMenu;
 using IzmPortal.Domain.Entities;
-using IzmPortal.Domain.Enums;
+using IzmPortal.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 
-namespace IzmPortal.Application.Services;
+namespace IzmPortal.Infrastructure.Services;
 
 public class SubMenuService : ISubMenuService
 {
-    private readonly ISubMenuRepository _subMenuRepository;
-    private readonly IMenuRepository _menuRepository;
-    private readonly IAuditService _auditService;
+    private readonly PortalDbContext _db;
 
-    public SubMenuService(
-        ISubMenuRepository subMenuRepository,
-        IMenuRepository menuRepository,
-        IAuditService auditService)
+    public SubMenuService(PortalDbContext db)
     {
-        _subMenuRepository = subMenuRepository;
-        _menuRepository = menuRepository;
-        _auditService = auditService;
+        _db = db;
     }
 
     public async Task<Result<List<SubMenuDto>>> GetByMenuIdAsync(
         Guid menuId,
         CancellationToken ct = default)
     {
-        var subMenus = await _subMenuRepository.GetByMenuIdAsync(menuId, ct);
-
-        var list = subMenus
-            .Where(x => x.IsActive)
+        var items = await _db.SubMenus
+            .AsNoTracking()
+            .Where(x => x.MenuId == menuId)
+            .OrderBy(x => x.Order)
             .Select(x => new SubMenuDto
             {
                 Id = x.Id,
                 Title = x.Title,
                 Order = x.Order,
-                IsActive = x.IsActive
+                IsActive = x.IsActive,
+                MenuId = x.MenuId
             })
-            .ToList();
+            .ToListAsync(ct);
 
-        return Result<List<SubMenuDto>>.Success(list);
+        return Result<List<SubMenuDto>>.Success(items);
     }
 
     public async Task<Result<SubMenuDto>> GetByIdAsync(
         Guid id,
         CancellationToken ct = default)
     {
-        var subMenu = await _subMenuRepository.GetByIdAsync(id, ct);
-        if (subMenu is null)
+        var subMenu = await _db.SubMenus.FindAsync(new object[] { id }, ct);
+
+        if (subMenu == null)
             return Result<SubMenuDto>.Failure("Alt menü bulunamadı.");
 
-        var dto = new SubMenuDto
+        return Result<SubMenuDto>.Success(new SubMenuDto
         {
             Id = subMenu.Id,
             Title = subMenu.Title,
             Order = subMenu.Order,
-            IsActive = subMenu.IsActive
-        };
-
-        return Result<SubMenuDto>.Success(dto);
+            IsActive = subMenu.IsActive,
+            MenuId = subMenu.MenuId
+        });
     }
 
     public async Task<Result> CreateAsync(
         CreateSubMenuDto dto,
         CancellationToken ct = default)
     {
-        var menu = await _menuRepository.GetByIdAsync(dto.MenuId, ct);
-        if (menu is null)
+        var menu = await _db.Menus.FindAsync(new object[] { dto.MenuId }, ct);
+        if (menu == null)
             return Result.Failure("Üst menü bulunamadı.");
 
-        var subMenu = new SubMenu(
-            dto.Title,
-            dto.Order,
-            dto.MenuId);
+        if (!menu.IsActive)
+            return Result.Failure("Pasif menü altına alt menü eklenemez.");
 
-        await _subMenuRepository.AddAsync(subMenu, ct);
+        var maxOrder = await _db.SubMenus
+            .Where(x => x.MenuId == dto.MenuId)
+            .Select(x => (int?)x.Order)
+            .MaxAsync(ct) ?? 0;
 
-        await _auditService.LogAsync(
-            AuditAction.Create,
-            AuditEntity.SubMenu,
-            subMenu.Id.ToString());
+        var nextOrder = maxOrder + 1;
+
+        var subMenu = new SubMenu(dto.Title, nextOrder, dto.MenuId);
+
+        _db.SubMenus.Add(subMenu);
+        await _db.SaveChangesAsync(ct);
 
         return Result.Success("Alt menü oluşturuldu.");
     }
@@ -89,20 +86,12 @@ public class SubMenuService : ISubMenuService
         UpdateSubMenuDto dto,
         CancellationToken ct = default)
     {
-        var subMenu = await _subMenuRepository.GetByIdAsync(dto.Id, ct);
-        if (subMenu is null)
+        var subMenu = await _db.SubMenus.FindAsync(new object[] { dto.Id }, ct);
+        if (subMenu == null)
             return Result.Failure("Alt menü bulunamadı.");
 
-        subMenu.Update(
-            dto.Title,
-            dto.Order);
-
-        await _subMenuRepository.UpdateAsync(subMenu, ct);
-
-        await _auditService.LogAsync(
-            AuditAction.Update,
-            AuditEntity.SubMenu,
-            subMenu.Id.ToString());
+        subMenu.UpdateTitle(dto.Title);
+        await _db.SaveChangesAsync(ct);
 
         return Result.Success("Alt menü güncellendi.");
     }
@@ -111,17 +100,12 @@ public class SubMenuService : ISubMenuService
         Guid id,
         CancellationToken ct = default)
     {
-        var subMenu = await _subMenuRepository.GetByIdAsync(id, ct);
-        if (subMenu is null)
+        var subMenu = await _db.SubMenus.FindAsync(new object[] { id }, ct);
+        if (subMenu == null)
             return Result.Failure("Alt menü bulunamadı.");
 
         subMenu.Activate();
-        await _subMenuRepository.UpdateAsync(subMenu, ct);
-
-        await _auditService.LogAsync(
-            AuditAction.Activate,
-            AuditEntity.SubMenu,
-            subMenu.Id.ToString());
+        await _db.SaveChangesAsync(ct);
 
         return Result.Success("Alt menü aktif edildi.");
     }
@@ -130,18 +114,14 @@ public class SubMenuService : ISubMenuService
         Guid id,
         CancellationToken ct = default)
     {
-        var subMenu = await _subMenuRepository.GetByIdAsync(id, ct);
-        if (subMenu is null)
+        var subMenu = await _db.SubMenus.FindAsync(new object[] { id }, ct);
+        if (subMenu == null)
             return Result.Failure("Alt menü bulunamadı.");
 
         subMenu.Deactivate();
-        await _subMenuRepository.UpdateAsync(subMenu, ct);
-
-        await _auditService.LogAsync(
-            AuditAction.Deactivate,
-            AuditEntity.SubMenu,
-            subMenu.Id.ToString());
+        await _db.SaveChangesAsync(ct);
 
         return Result.Success("Alt menü pasif edildi.");
     }
 }
+

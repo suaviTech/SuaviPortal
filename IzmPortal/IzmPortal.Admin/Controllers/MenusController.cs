@@ -1,51 +1,98 @@
-﻿using IzmPortal.Application.Abstractions.Services;
+﻿using IzmPortal.Admin.Extensions;
 using IzmPortal.Application.DTOs.Menu;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace IzmPortal.Api.Controllers;
+namespace IzmPortal.Admin.Controllers;
 
-[ApiController]
-[Route("api/menus")]
-[Authorize(Policy = "AdminAccess")]
-public class MenusController : ControllerBase
+[Authorize]
+public class MenusController : BaseAdminController
 {
-    private readonly IMenuService _menuService;
-
-    public MenusController(IMenuService menuService)
+    public MenusController(IHttpClientFactory factory)
+        : base(factory)
     {
-        _menuService = menuService;
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GetAll(CancellationToken ct)
-        => Ok((await _menuService.GetAllAsync(ct)).Data);
-
-    [HttpGet("{id:guid}")]
-    public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
+    // LIST
+    public async Task<IActionResult> Index(CancellationToken ct)
     {
-        var result = await _menuService.GetByIdAsync(id, ct);
-        return result.Succeeded ? Ok(result.Data) : NotFound(result.Message);
+        var response = await Api.GetAsync("/api/menus", ct);
+
+        var failure = await HandleApiFailureAsync(
+            response,
+            "Menüler alınamadı.");
+
+        if (failure != null)
+            return failure;
+
+        var items = await response
+            .ReadContentAsync<List<MenuDto>>() ?? new();
+
+        return View(items);
     }
 
+    // CREATE (GET)
+    public IActionResult Create()
+        => View();
+
+    // CREATE (POST)
     [HttpPost]
-    public async Task<IActionResult> Create(CreateMenuDto dto, CancellationToken ct)
-        => Ok((await _menuService.CreateAsync(dto, ct)).Message);
-
-    [HttpPut("{id:guid}")]
-    public async Task<IActionResult> Update(Guid id, UpdateMenuDto dto, CancellationToken ct)
+    public async Task<IActionResult> Create(
+        CreateMenuDto dto,
+        CancellationToken ct)
     {
-        if (id != dto.Id)
-            return BadRequest("Id uyuşmazlığı.");
+        var response = await Api.PostAsJsonAsync(
+            "/api/menus", dto, ct);
 
-        return Ok((await _menuService.UpdateAsync(dto, ct)).Message);
+        var failure = await HandleApiFailureAsync(
+            response,
+            "Menü oluşturulamadı.");
+
+        if (failure != null)
+            return failure;
+
+        return SuccessAndRedirect("Menü oluşturuldu.");
     }
 
-    [HttpPut("{id:guid}/activate")]
-    public async Task<IActionResult> Activate(Guid id, CancellationToken ct)
-        => Ok((await _menuService.ActivateAsync(id, ct)).Message);
+    // EDIT (GET)
+    public async Task<IActionResult> Edit(Guid id, CancellationToken ct)
+    {
+        var response = await Api.GetAsync(
+            $"/api/menus/{id}", ct);
 
-    [HttpPut("{id:guid}/deactivate")]
-    public async Task<IActionResult> Deactivate(Guid id, CancellationToken ct)
-        => Ok((await _menuService.DeactivateAsync(id, ct)).Message);
+        var failure = await HandleApiFailureAsync(
+            response,
+            "Menü bulunamadı.");
+
+        if (failure != null)
+            return failure;
+
+        var item = await response
+            .ReadContentAsync<MenuDto>();
+
+        return View(new UpdateMenuDto
+        {
+            Id = item!.Id,
+            Title = item.Title
+        });
+    }
+
+    // EDIT (POST)
+    [HttpPost]
+    public async Task<IActionResult> Edit(
+        UpdateMenuDto dto,
+        CancellationToken ct)
+    {
+        var response = await Api.PutAsJsonAsync(
+            $"/api/menus/{dto.Id}", dto, ct);
+
+        var failure = await HandleApiFailureAsync(
+            response,
+            "Menü güncellenemedi.");
+
+        if (failure != null)
+            return failure;
+
+        return SuccessAndRedirect("Menü güncellendi.");
+    }
 }

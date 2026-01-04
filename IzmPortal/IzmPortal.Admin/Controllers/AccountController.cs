@@ -76,10 +76,12 @@ public class AccountController : Controller
         JwtSecurityToken jwt = handler.ReadJwtToken(token);
 
         var claims = new List<Claim>
-{
-    new Claim(ClaimTypes.Name, email),
-    new Claim("access_token", token)
-};
+            {
+                new Claim(ClaimTypes.NameIdentifier, email), // 🔥 ZORUNLU
+                new Claim(ClaimTypes.Name, email),
+                new Claim("access_token", token)
+            };
+
 
 
         // ROLE CLAIMLERİ

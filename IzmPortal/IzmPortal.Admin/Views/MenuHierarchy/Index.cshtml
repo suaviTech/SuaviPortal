@@ -1,4 +1,5 @@
-﻿@model List<IzmPortal.Application.DTOs.Menu.MenuDto>
+﻿@model List<IzmPortal.Application.DTOs.MenuHierarchy.MenuHierarchyDto>
+
 
 @{
     ViewData["Title"] = "Menü Yapısı";
@@ -6,12 +7,12 @@
 
 <h2>Menü Yapısı</h2>
 
-@foreach (var menu in Model.OrderBy(x => x.Order))
+@foreach (var menu in Model)
 {
     <div class="card mb-3">
         <div class="card-header">
             <strong>@menu.Title</strong>
-            <span class="text-muted ms-2">(Sıra: @menu.Order)</span>
+            <span class="text-muted ms-2">(Sıra: @menu.SubMenus)</span>
         </div>
 
         <div class="card-body">
@@ -22,7 +23,7 @@
             else
             {
                 <ul class="list-group">
-                    @foreach (var sub in menu.SubMenus.OrderBy(x => x.Order))
+                    @foreach (var sub in menu.SubMenus)
                     {
                         <li class="list-group-item">
                             <strong>@sub.Title</strong>

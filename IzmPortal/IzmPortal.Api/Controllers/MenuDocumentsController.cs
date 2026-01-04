@@ -1,5 +1,6 @@
 ﻿using IzmPortal.Application.Abstractions.Services;
 using IzmPortal.Application.DTOs.MenuDocument;
+using IzmPortal.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,7 +18,7 @@ public class MenuDocumentsController : ControllerBase
         _service = service;
     }
 
-    [HttpGet("by-submenu/{subMenuId}")]
+    [HttpGet("by-submenu/{subMenuId:guid}")]
     public async Task<IActionResult> GetBySubMenu(
         Guid subMenuId,
         CancellationToken ct)
@@ -50,49 +51,17 @@ public class MenuDocumentsController : ControllerBase
             $"/docs/{fileName}",
             ct);
 
-        if (!result.Succeeded)
-            return BadRequest(result.Message);
-
-        return Ok(result.Message);
-    }
-    [HttpPut("{id}")]
-    public async Task<IActionResult> Update(
-    Guid id,
-    [FromBody] UpdateMenuDocumentDto dto,
-    CancellationToken ct)
-    {
-        if (id != dto.Id)
-            return BadRequest("Id uyuşmazlığı.");
-
-        var result = await _service.UpdateAsync(dto, ct);
-
-        if (!result.Succeeded)
-            return BadRequest(result.Message);
-
-        return Ok(result.Message);
+        return result.Succeeded
+            ? Ok(result.Message)
+            : BadRequest(result.Message);
     }
 
-
-    [HttpPut("{id}/activate")]
-    public async Task<IActionResult> Activate(Guid id, CancellationToken ct)
-    {
-        var result = await _service.ActivateAsync(id, ct);
-
-        if (!result.Succeeded)
-            return BadRequest(result.Message);
-
-        return Ok(result.Message);
-    }
-
-    [HttpPut("{id}/deactivate")]
-    public async Task<IActionResult> Deactivate(Guid id, CancellationToken ct)
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         var result = await _service.DeactivateAsync(id, ct);
-
-        if (!result.Succeeded)
-            return BadRequest(result.Message);
-
-        return Ok(result.Message);
+        return result.Succeeded
+            ? Ok(result.Message)
+            : NotFound(result.Message);
     }
-
 }

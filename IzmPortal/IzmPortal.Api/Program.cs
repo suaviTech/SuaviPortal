@@ -1,14 +1,10 @@
 ﻿using IzmPortal.Api.Security;
-using IzmPortal.Application.Abstractions.Repositories;
-using IzmPortal.Application.Abstractions.Services;
-using IzmPortal.Application.Services;
 using IzmPortal.Infrastructure;
 using IzmPortal.Infrastructure.Identity;
 using IzmPortal.Infrastructure.Persistence;
-using IzmPortal.Infrastructure.Repositories;
-using IzmPortal.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
@@ -23,7 +19,7 @@ builder.Services.AddControllers(options =>
 });
 
 // =====================================================
-// INFRASTRUCTURE (DbContext, Configurations, etc.)
+// INFRASTRUCTURE (DbContext + Services)
 // =====================================================
 builder.Services.AddInfrastructure(builder.Configuration);
 
@@ -61,7 +57,7 @@ builder.Services.AddAuthentication(options =>
 });
 
 // =====================================================
-// IDENTITY (ApplicationUser)
+// IDENTITY
 // =====================================================
 builder.Services
     .AddIdentityCore<ApplicationUser>(options =>
@@ -78,28 +74,9 @@ builder.Services
     .AddSignInManager();
 
 // =====================================================
-// 🔥 JWT TOKEN GENERATOR (KRİTİK EKSİK OLAN PARÇA)
+// JWT TOKEN GENERATOR
 // =====================================================
 builder.Services.AddScoped<JwtTokenGenerator>();
-
-// =====================================================
-// REPOSITORIES
-// =====================================================
-builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
-builder.Services.AddScoped<IMenuRepository, MenuRepository>();
-builder.Services.AddScoped<ISubMenuRepository, SubMenuRepository>();
-builder.Services.AddScoped<IMenuDocumentRepository, MenuDocumentRepository>();
-builder.Services.AddScoped<IApplicationShortcutRepository, ApplicationShortcutRepository>();
-
-// =====================================================
-// SERVICES
-// =====================================================
-builder.Services.AddScoped<ICategoryService, CategoryService>();
-builder.Services.AddScoped<IMenuService, MenuService>();
-builder.Services.AddScoped<ISubMenuService, SubMenuService>();
-builder.Services.AddScoped<IMenuDocumentService, MenuDocumentService>();
-builder.Services.AddScoped<IApplicationShortcutService, ApplicationShortcutService>();
-builder.Services.AddScoped<IAuditService, AuditService>();
 
 builder.Services.AddHttpContextAccessor();
 

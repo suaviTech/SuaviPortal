@@ -18,6 +18,11 @@ public interface IMenuDocumentService
         UpdateMenuDocumentDto dto,
         CancellationToken ct = default);
 
-    Task<Result> ActivateAsync(Guid id, CancellationToken ct = default);
-    Task<Result> DeactivateAsync(Guid id, CancellationToken ct = default);
+    Task<Result> ActivateAsync(
+        Guid id,
+        CancellationToken ct = default);
+
+    Task<Result> DeactivateAsync(
+        Guid id,
+        CancellationToken ct = default);
 }

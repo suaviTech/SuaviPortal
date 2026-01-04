@@ -103,7 +103,6 @@ public class SubMenusController : BaseAdminController
         {
             Id = item.Id,
             Title = item.Title,
-            Order = item.Order
         });
     }
 

@@ -23,12 +23,14 @@ public class MenuDocumentService : IMenuDocumentService
         var items = await _db.MenuDocuments
             .AsNoTracking()
             .Where(x => x.SubMenuId == subMenuId)
-            .OrderByDescending(x => x.CreatedAt)
+            .OrderBy(x => x.Order)
             .Select(x => new MenuDocumentDto
             {
                 Id = x.Id,
+                SubMenuId = x.SubMenuId,
                 Title = x.Title,
                 FilePath = x.FilePath,
+                Order = x.Order,
                 IsActive = x.IsActive,
                 CreatedAt = x.CreatedAt
             })
@@ -42,9 +44,26 @@ public class MenuDocumentService : IMenuDocumentService
         string filePath,
         CancellationToken ct = default)
     {
+        var subMenu = await _db.SubMenus
+            .FirstOrDefaultAsync(x => x.Id == dto.SubMenuId, ct);
+
+        if (subMenu == null)
+            return Result.Failure("Alt menü bulunamadı.");
+
+        if (!subMenu.IsActive)
+            return Result.Failure("Pasif alt menüye doküman eklenemez.");
+
+        var maxOrder = await _db.MenuDocuments
+            .Where(x => x.SubMenuId == dto.SubMenuId)
+            .Select(x => (int?)x.Order)
+            .MaxAsync(ct) ?? 0;
+
+        var nextOrder = maxOrder + 1;
+
         var entity = new MenuDocument(
             dto.Title,
             filePath,
+            nextOrder,
             dto.SubMenuId);
 
         _db.MenuDocuments.Add(entity);
@@ -63,7 +82,7 @@ public class MenuDocumentService : IMenuDocumentService
         if (entity == null)
             return Result.Failure("Doküman bulunamadı.");
 
-        entity.Update(dto.Title);
+        entity.UpdateTitle(dto.Title);
         await _db.SaveChangesAsync(ct);
 
         return Result.Success("Doküman güncellendi.");

@@ -1,6 +1,5 @@
 ﻿using IzmPortal.Domain.Common;
-
-namespace IzmPortal.Domain.Entities;
+using IzmPortal.Domain.Entities;
 
 public class Menu : BaseEntity
 {
@@ -14,28 +13,36 @@ public class Menu : BaseEntity
 
     public Menu(string title, int order)
     {
-        Title = title;
-        Order = order;
+        SetTitle(title);
+        SetOrder(order);
+
         IsActive = true;
         CreatedAt = DateTime.UtcNow;
     }
 
     public void Update(string title, int order)
     {
-        Title = title;
+        SetTitle(title);
+        SetOrder(order);
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void Activate() => IsActive = true;
+    public void Deactivate() => IsActive = false;
+
+    private void SetTitle(string title)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+            throw new ArgumentException("Menü başlığı boş olamaz.");
+
+        Title = title.Trim();
+    }
+
+    private void SetOrder(int order)
+    {
+        if (order <= 0)
+            throw new ArgumentException("Menü sırası 0'dan büyük olmalıdır.");
+
         Order = order;
-        UpdatedAt = DateTime.UtcNow;
-    }
-
-    public void Activate()
-    {
-        IsActive = true;
-        UpdatedAt = DateTime.UtcNow;
-    }
-
-    public void Deactivate()
-    {
-        IsActive = false;
-        UpdatedAt = DateTime.UtcNow;
     }
 }
