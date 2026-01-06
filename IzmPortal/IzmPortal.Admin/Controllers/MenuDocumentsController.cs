@@ -1,24 +1,27 @@
 ﻿using IzmPortal.Admin.Extensions;
 using IzmPortal.Application.DTOs.MenuDocument;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IzmPortal.Admin.Controllers;
 
-[Authorize]
 public class MenuDocumentsController : BaseAdminController
 {
     public MenuDocumentsController(IHttpClientFactory factory)
-        : base(factory) { }
+        : base(factory)
+    {
+    }
 
+    // =======================
     // LIST
-    public async Task<IActionResult> Index(Guid subMenuId, CancellationToken ct)
+    // =======================
+    public async Task<IActionResult> Index(Guid menuId, CancellationToken ct)
     {
         var response = await Api.GetAsync(
-            $"/api/menudocuments/by-submenu/{subMenuId}", ct);
+            $"/api/menudocuments/by-menu/{menuId}", ct);
 
         var failure = await HandleApiFailureAsync(
-            response, "Dokümanlar alınamadı.");
+            response,
+            "Dokümanlar alınamadı.");
 
         if (failure != null)
             return failure;
@@ -26,61 +29,96 @@ public class MenuDocumentsController : BaseAdminController
         var items = await response
             .ReadContentAsync<List<MenuDocumentDto>>() ?? new();
 
-        ViewBag.SubMenuId = subMenuId;
+        ViewBag.MenuId = menuId;
         return View(items);
     }
 
+    // =======================
     // UPLOAD (GET)
-    public IActionResult Upload(Guid subMenuId)
+    // =======================
+    public IActionResult Upload(Guid menuId)
     {
-        ViewBag.SubMenuId = subMenuId;
+        ViewBag.MenuId = menuId;
         return View();
     }
 
+    // =======================
     // UPLOAD (POST)
+    // =======================
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Upload(
-        Guid subMenuId,
-        string title,
+        CreateMenuDocumentDto dto,
         IFormFile file,
         CancellationToken ct)
     {
-        if (file == null || file.Length == 0)
+        if (!ModelState.IsValid || file == null || file.Length == 0)
         {
-            ModelState.AddModelError("", "Dosya seçilmedi.");
-            ViewBag.SubMenuId = subMenuId;
-            return View();
+            ModelState.AddModelError(
+                nameof(file),
+                "Dosya seçilmedi.");
+
+            ViewBag.MenuId = dto.MenuId;
+            return View(dto);
         }
 
         using var content = new MultipartFormDataContent();
-        content.Add(new StringContent(subMenuId.ToString()), "SubMenuId");
-        content.Add(new StringContent(title ?? ""), "Title");
-        content.Add(new StreamContent(file.OpenReadStream()), "File", file.FileName);
 
-        var response = await Api.PostAsync("/api/menudocuments", content, ct);
+        content.Add(
+            new StringContent(dto.MenuId.ToString()),
+            nameof(CreateMenuDocumentDto.MenuId));
+
+        content.Add(
+            new StringContent(dto.Title ?? string.Empty),
+            nameof(CreateMenuDocumentDto.Title));
+
+        content.Add(
+            new StreamContent(file.OpenReadStream()),
+            nameof(file),
+            file.FileName);
+
+        var response = await Api.PostAsync(
+            "/api/menudocuments",
+            content,
+            ct);
 
         var failure = await HandleApiFailureAsync(
-            response, "Doküman yüklenemedi.");
+            response,
+            "Doküman yüklenemedi.");
 
         if (failure != null)
             return failure;
 
-        return SuccessAndRedirect("Doküman yüklendi.");
+        TempData["Success"] = "Doküman başarıyla yüklendi.";
+
+        return RedirectToAction(
+            nameof(Index),
+            new { menuId = dto.MenuId });
     }
 
+    // =======================
     // DELETE
-    [HttpPost]
-    public async Task<IActionResult> Delete(Guid id, Guid subMenuId, CancellationToken ct)
+    // =======================
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(
+        Guid id,
+        Guid menuId,
+        CancellationToken ct)
     {
         var response = await Api.DeleteAsync(
-            $"/api/menudocuments/{id}", ct);
+            $"/api/menudocuments/{id}",
+            ct);
 
         var failure = await HandleApiFailureAsync(
-            response, "Doküman silinemedi.");
+            response,
+            "Doküman silinemedi.");
 
         if (failure != null)
             return failure;
 
-        return RedirectToAction(nameof(Index), new { subMenuId });
+        TempData["Success"] = "Doküman silindi.";
+
+        return RedirectToAction(
+            nameof(Index),
+            new { menuId });
     }
 }

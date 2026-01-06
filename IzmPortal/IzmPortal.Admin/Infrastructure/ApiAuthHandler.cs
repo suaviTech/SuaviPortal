@@ -16,24 +16,28 @@ public class ApiAuthHandler : DelegatingHandler
         _httpContextAccessor = httpContextAccessor;
     }
 
-    protected override async Task<HttpResponseMessage> SendAsync(
+    protected override Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request,
         CancellationToken cancellationToken)
     {
         var context = _httpContextAccessor.HttpContext;
 
-        // 🔐 Cookie içindeki JWT’yi al
-        var token = context?.User?.FindFirst("access_token")?.Value;
+        // 🔴 BURASI KRİTİK
+        if (context == null || !context.User.Identity?.IsAuthenticated == true)
+        {
+            // Login olmayan kullanıcı → API token ekleme
+            return base.SendAsync(request, cancellationToken);
+        }
+
+        var token = context.User.FindFirst("access_token")?.Value;
 
         if (!string.IsNullOrEmpty(token))
         {
             request.Headers.Authorization =
-                new AuthenticationHeaderValue("Bearer", token);
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
         }
 
-        var response = await base.SendAsync(request, cancellationToken);
-
-        // ❗ SADECE STATUS CODE DÖN
-        return response;
+        return base.SendAsync(request, cancellationToken);
     }
 }
+

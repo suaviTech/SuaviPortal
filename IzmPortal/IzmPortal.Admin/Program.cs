@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Authentication.Cookies;
-using IzmPortal.Admin.Infrastructure; // ApiAuthHandler
+﻿using IzmPortal.Admin.Infrastructure; // ApiAuthHandler
 using IzmPortal.Admin.Middleware;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,6 +10,11 @@ var builder = WebApplication.CreateBuilder(args);
 // MVC
 // --------------------
 builder.Services.AddControllersWithViews();
+
+
+
+
+
 
 // --------------------
 // API Base URL (appsettings.json)
@@ -43,11 +50,30 @@ builder.Services
     {
         options.LoginPath = "/Account/Login";
         options.AccessDeniedPath = "/Account/AccessDenied";
+
+        options.Events.OnRedirectToLogin = context =>
+        {
+            context.Response.Redirect(context.RedirectUri);
+            return Task.CompletedTask;
+        };
+
+        options.Cookie.Name = "IzmPortal.Admin.Auth";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
         options.SlidingExpiration = true;
     });
 
-builder.Services.AddAuthorization();
+
+builder.Services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+});
+
+
 
 var app = builder.Build();
 

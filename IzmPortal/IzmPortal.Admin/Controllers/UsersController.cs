@@ -1,52 +1,49 @@
-﻿using System.Net.Http.Headers;
-using System.Text;
-using System.Text.Json;
-using IzmPortal.Admin.ViewModels.Users;
-using Microsoft.AspNetCore.Authorization;
+﻿using IzmPortal.Admin.Extensions;
+using IzmPortal.Admin.Models.Users;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 
 namespace IzmPortal.Admin.Controllers;
 
-[Authorize(Roles = "SuperAdmin")]
-public class UsersController : Controller
+public class UsersController : BaseAdminController
 {
-   
-    private readonly HttpClient _apiClient;
-    public UsersController(IHttpClientFactory httpClientFactory)
+    public UsersController(IHttpClientFactory factory)
+        : base(factory)
     {
-        _apiClient = httpClientFactory.CreateClient("ApiClient");
     }
 
-    // --------------------
+    // =======================
     // INDEX
-    // --------------------
-    public async Task<IActionResult> Index()
+    // =======================
+    public async Task<IActionResult> Index(CancellationToken ct)
     {
-        var client = _apiClient;
-        var response = await client.GetAsync("/api/users");
+        var response = await Api.GetAsync(
+            "/api/users",
+            ct);
 
-        if (!response.IsSuccessStatusCode)
-        {
-            TempData["Error"] = "Kullanıcılar alınamadı.";
-            return View(new UsersIndexVm());
-        }
+        var failure = await HandleApiFailureAsync(
+            response,
+            "Kullanıcılar alınamadı.");
 
-        var users =
-            JsonSerializer.Deserialize<List<UserListVm>>(
-                await response.Content.ReadAsStringAsync(),
-                JsonOptions());
+        if (failure != null)
+            return failure;
+
+        var users = await response
+            .ReadContentAsync<List<UserListVm>>() ?? new();
 
         return View(new UsersIndexVm
         {
-            Users = users ?? new()
+            Users = users
         });
     }
 
-    // --------------------
-    // LOOKUP (API)
-    // --------------------
-    [HttpPost]
-    public async Task<IActionResult> Lookup(string email)
+    // =======================
+    // LOOKUP
+    // =======================
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> Lookup(
+        string email,
+        CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(email))
         {
@@ -54,112 +51,103 @@ public class UsersController : Controller
             return RedirectToAction(nameof(Index));
         }
 
-        var client = _apiClient;
-        var response = await client.GetAsync(
-            $"/api/users/lookup?email={email}");
+        var response = await Api.GetAsync(
+            $"/api/users/lookup?email={email}",
+            ct);
 
-        if (!response.IsSuccessStatusCode)
-        {
-            TempData["Error"] = "Kullanıcı sorgulanamadı.";
-            return RedirectToAction(nameof(Index));
-        }
+        var failure = await HandleApiFailureAsync(
+            response,
+            "Kullanıcı sorgulanamadı.");
 
-        var lookup =
-            JsonSerializer.Deserialize<UserLookupResultVm>(
-                await response.Content.ReadAsStringAsync(),
-                JsonOptions());
+        if (failure != null)
+            return failure;
 
-        TempData["Lookup"] = JsonSerializer.Serialize(lookup);
+        var lookup = await response
+            .ReadContentAsync<UserLookupResultVm>();
+
+        TempData["Lookup"] =
+            JsonSerializer.Serialize(lookup);
+
         TempData["LookupEmail"] = email;
 
         return RedirectToAction(nameof(Index));
     }
 
-    // --------------------
+    // =======================
     // AUTHORIZE FROM PERSONAL
-    // --------------------
-    [HttpPost]
+    // =======================
+    [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> AuthorizeFromPersonal(
         string email,
-        string role)
+        string role,
+        CancellationToken ct)
     {
-        var client = _apiClient;
-
-        var body = new
-        {
-            email,
-            role
-        };
-
-        var response = await client.PostAsync(
+        var response = await Api.PostAsJsonAsync(
             "/api/users/authorize-from-personal",
-            new StringContent(
-                JsonSerializer.Serialize(body),
-                Encoding.UTF8,
-                "application/json"));
+            new { email, role },
+            ct);
 
-        if (!response.IsSuccessStatusCode)
-        {
-            TempData["Error"] =
-                await response.Content.ReadAsStringAsync();
-            return RedirectToAction(nameof(Index));
-        }
+        var failure = await HandleApiFailureAsync(
+            response,
+            "Kullanıcı yetkilendirilemedi.");
 
-        TempData["Success"] = "Kullanıcı yetkilendirildi.";
-        return RedirectToAction(nameof(Index));
+        if (failure != null)
+            return failure;
+
+        return SuccessAndRedirect(
+            "Kullanıcı yetkilendirildi.");
     }
-    [HttpPost]
-    public async Task<IActionResult> ChangeRole(string userId, string role)
+
+    // =======================
+    // CHANGE ROLE
+    // =======================
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> ChangeRole(
+        string userId,
+        string role,
+        CancellationToken ct)
     {
-        var response = await _apiClient.PostAsJsonAsync(
+        var response = await Api.PostAsJsonAsync(
             "/api/users/change-role",
-            new
-            {
-                UserId = userId,
-                Role = role
-            });
+            new { userId, role },
+            ct);
 
-        if (!response.IsSuccessStatusCode)
-        {
-            TempData["Error"] = "Rol değiştirilemedi.";
-            return RedirectToAction(nameof(Index));
-        }
+        var failure = await HandleApiFailureAsync(
+            response,
+            "Rol değiştirilemedi.");
 
-        TempData["Success"] = "Rol başarıyla güncellendi.";
-        return RedirectToAction(nameof(Index));
+        if (failure != null)
+            return failure;
+
+        return SuccessAndRedirect(
+            "Rol başarıyla güncellendi.");
     }
 
-    // --------------------
-    // HELPERS
-    // --------------------
-
-    private static JsonSerializerOptions JsonOptions()
-        => new() { PropertyNameCaseInsensitive = true };
-
-    //ResetPassword action EKLE
-
-    [HttpPost]
-    public async Task<IActionResult> ResetPassword(string userId)
+    // =======================
+    // RESET PASSWORD
+    // =======================
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResetPassword(
+        string userId,
+        CancellationToken ct)
     {
-        // Varsayılan geçici şifre (kurum standardı)
-        var tempPassword = "Temp123*"; // istersen konfigürasyona alırız
-
-        var response = await _apiClient.PostAsJsonAsync(
+        var response = await Api.PostAsJsonAsync(
             "/api/users/reset-password",
             new
             {
-                UserId = userId,
-                NewPassword = tempPassword
-            });
+                userId,
+                newPassword = "Temp123*"
+            },
+            ct);
 
-        if (!response.IsSuccessStatusCode)
-        {
-            TempData["Error"] = "Şifre sıfırlanamadı.";
-            return RedirectToAction(nameof(Index));
-        }
+        var failure = await HandleApiFailureAsync(
+            response,
+            "Şifre sıfırlanamadı.");
 
-        TempData["Success"] = "Şifre sıfırlandı. Kullanıcı ilk girişte şifre değiştirecek.";
-        return RedirectToAction(nameof(Index));
+        if (failure != null)
+            return failure;
+
+        return SuccessAndRedirect(
+            "Şifre sıfırlandı. Kullanıcı ilk girişte şifre değiştirecek.");
     }
-
 }

@@ -169,33 +169,6 @@ namespace IzmPortal.Infrastructure.Migrations
                     b.ToTable("Categories");
                 });
 
-            modelBuilder.Entity("IzmPortal.Domain.Entities.Menu", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("Order")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Menus");
-                });
-
             modelBuilder.Entity("IzmPortal.Domain.Entities.MenuDocument", b =>
                 {
                     b.Property<Guid>("Id")
@@ -212,11 +185,13 @@ namespace IzmPortal.Infrastructure.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
-                    b.Property<Guid>("SubMenuId")
+                    b.Property<Guid>("MenuId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int>("Order")
+                        .HasColumnType("int");
+
                     b.Property<string>("Title")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -224,7 +199,7 @@ namespace IzmPortal.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("SubMenuId");
+                    b.HasIndex("MenuId");
 
                     b.ToTable("MenuDocuments");
                 });
@@ -251,38 +226,6 @@ namespace IzmPortal.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Sliders");
-                });
-
-            modelBuilder.Entity("IzmPortal.Domain.Entities.SubMenu", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<Guid>("MenuId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("Order")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("MenuId");
-
-                    b.ToTable("SubMenus");
                 });
 
             modelBuilder.Entity("IzmPortal.Infrastructure.Identity.ApplicationUser", b =>
@@ -355,6 +298,38 @@ namespace IzmPortal.Infrastructure.Migrations
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
                     b.ToTable("AspNetUsers", (string)null);
+                });
+
+            modelBuilder.Entity("Menu", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("ParentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ParentId");
+
+                    b.ToTable("Menus");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -503,20 +478,22 @@ namespace IzmPortal.Infrastructure.Migrations
 
             modelBuilder.Entity("IzmPortal.Domain.Entities.MenuDocument", b =>
                 {
-                    b.HasOne("IzmPortal.Domain.Entities.SubMenu", null)
-                        .WithMany("Documents")
-                        .HasForeignKey("SubMenuId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("IzmPortal.Domain.Entities.SubMenu", b =>
-                {
-                    b.HasOne("IzmPortal.Domain.Entities.Menu", null)
-                        .WithMany("SubMenus")
+                    b.HasOne("Menu", "Menu")
+                        .WithMany()
                         .HasForeignKey("MenuId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Menu");
+                });
+
+            modelBuilder.Entity("Menu", b =>
+                {
+                    b.HasOne("Menu", "Parent")
+                        .WithMany("Children")
+                        .HasForeignKey("ParentId");
+
+                    b.Navigation("Parent");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -570,14 +547,9 @@ namespace IzmPortal.Infrastructure.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("IzmPortal.Domain.Entities.Menu", b =>
+            modelBuilder.Entity("Menu", b =>
                 {
-                    b.Navigation("SubMenus");
-                });
-
-            modelBuilder.Entity("IzmPortal.Domain.Entities.SubMenu", b =>
-                {
-                    b.Navigation("Documents");
+                    b.Navigation("Children");
                 });
 #pragma warning restore 612, 618
         }

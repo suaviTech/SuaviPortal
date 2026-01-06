@@ -1,5 +1,4 @@
 ﻿using IzmPortal.Domain.Common;
-using IzmPortal.Domain.Entities;
 
 public class Menu : BaseEntity
 {
@@ -7,15 +6,18 @@ public class Menu : BaseEntity
     public int Order { get; private set; }
     public bool IsActive { get; private set; }
 
-    public ICollection<SubMenu> SubMenus { get; private set; } = new List<SubMenu>();
+    public Guid? ParentId { get; private set; }
+    public Menu? Parent { get; private set; }
+    public ICollection<Menu> Children { get; private set; } = new List<Menu>();
 
     protected Menu() { }
 
-    public Menu(string title, int order)
+    public Menu(string title, int order, Guid? parentId = null)
     {
         SetTitle(title);
         SetOrder(order);
 
+        ParentId = parentId;
         IsActive = true;
         CreatedAt = DateTime.UtcNow;
     }
@@ -24,6 +26,12 @@ public class Menu : BaseEntity
     {
         SetTitle(title);
         SetOrder(order);
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void SetParent(Guid? parentId)
+    {
+        ParentId = parentId;
         UpdatedAt = DateTime.UtcNow;
     }
 

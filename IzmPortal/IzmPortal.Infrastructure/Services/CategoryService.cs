@@ -106,32 +106,50 @@ public class CategoryService : ICategoryService
     }
 
     public async Task<Result> ActivateAsync(
-        Guid id,
-        CancellationToken ct = default)
+       Guid id,
+       CancellationToken ct = default)
     {
-        var entity = await _db.Categories.FindAsync(new object[] { id }, ct);
+        var category = await _db.Categories
+            .FirstOrDefaultAsync(c => c.Id == id, ct);
 
-        if (entity == null)
+        if (category == null)
             return Result.Failure("Kategori bulunamadı.");
 
-        entity.Activate();
+        // 🔓 SADECE kategori aktif
+        category.Activate();
+
         await _db.SaveChangesAsync(ct);
 
-        return Result.Success();
+        return Result.Success("Kategori aktifleştirildi.");
     }
+
 
     public async Task<Result> DeactivateAsync(
         Guid id,
         CancellationToken ct = default)
     {
-        var entity = await _db.Categories.FindAsync(new object[] { id }, ct);
+        var category = await _db.Categories
+            .Include(c => c.Announcements)
+            .FirstOrDefaultAsync(c => c.Id == id, ct);
 
-        if (entity == null)
+        if (category == null)
             return Result.Failure("Kategori bulunamadı.");
 
-        entity.Deactivate();
+        // 1️⃣ Kategori pasif
+        category.Deactivate();
+
+        // 2️⃣ Bağlı duyurular pasif
+        foreach (var announcement in category.Announcements)
+        {
+            if (announcement.IsActive)
+                announcement.Deactivate();
+        }
+
         await _db.SaveChangesAsync(ct);
 
-        return Result.Success();
+        return Result.Success(
+            "Kategori pasifleştirildi. Bağlı duyurular da pasif hale getirildi.");
     }
+
+
 }

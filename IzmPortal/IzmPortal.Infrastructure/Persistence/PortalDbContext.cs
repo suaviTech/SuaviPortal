@@ -17,7 +17,6 @@ public class PortalDbContext
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Announcement> Announcements => Set<Announcement>();
     public DbSet<Menu> Menus => Set<Menu>();
-    public DbSet<SubMenu> SubMenus => Set<SubMenu>();
     public DbSet<MenuDocument> MenuDocuments => Set<MenuDocument>();
     public DbSet<Slider> Sliders => Set<Slider>();
     public DbSet<ApplicationShortcut> ApplicationShortcuts => Set<ApplicationShortcut>();

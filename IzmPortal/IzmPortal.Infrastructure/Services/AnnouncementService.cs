@@ -11,14 +11,20 @@ public class AnnouncementService : IAnnouncementService
 {
     private readonly PortalDbContext _db;
 
-    public AnnouncementService(PortalDbContext db)
+    private readonly IFileStorageService _fileStorage;
+
+    public AnnouncementService(
+        PortalDbContext db,
+        IFileStorageService fileStorage)
     {
         _db = db;
+        _fileStorage = fileStorage;
     }
 
+
     // ================= ADMIN =================
-    public async Task<Result<List<AnnouncementDto>>> GetAllAsync(
-        CancellationToken ct = default)
+
+    public async Task<Result<List<AnnouncementDto>>> GetAllAsync(CancellationToken ct)
     {
         var items = await _db.Announcements
             .AsNoTracking()
@@ -33,16 +39,15 @@ public class AnnouncementService : IAnnouncementService
                 CategoryName = x.Category.Name,
                 IsActive = x.IsActive,
                 CreatedAt = x.CreatedAt,
-                CreatedBy = x.CreatedBy
+                CreatedBy = x.CreatedBy,
+                PdfUrl = x.PdfUrl
             })
             .ToListAsync(ct);
 
         return Result<List<AnnouncementDto>>.Success(items);
     }
 
-    public async Task<Result<AnnouncementDto>> GetByIdAsync(
-        Guid id,
-        CancellationToken ct = default)
+    public async Task<Result<AnnouncementDto>> GetByIdAsync(Guid id, CancellationToken ct)
     {
         var entity = await _db.Announcements
             .Include(x => x.Category)
@@ -51,7 +56,7 @@ public class AnnouncementService : IAnnouncementService
         if (entity == null)
             return Result<AnnouncementDto>.Failure("Duyuru bulunamadı.");
 
-        var dto = new AnnouncementDto
+        return Result<AnnouncementDto>.Success(new AnnouncementDto
         {
             Id = entity.Id,
             Title = entity.Title,
@@ -60,25 +65,23 @@ public class AnnouncementService : IAnnouncementService
             CategoryName = entity.Category.Name,
             IsActive = entity.IsActive,
             CreatedAt = entity.CreatedAt,
-            CreatedBy = entity.CreatedBy
-        };
-
-        return Result<AnnouncementDto>.Success(dto);
+            CreatedBy = entity.CreatedBy,
+            PdfUrl = entity.PdfUrl
+        });
     }
 
     public async Task<Result> CreateAsync(
         CreateAnnouncementDto dto,
         string createdBy,
-        CancellationToken ct = default)
+        string? pdfUrl,
+        CancellationToken ct)
     {
         var entity = new Announcement(
-                 dto.Title,
-                 dto.Content,
-                 dto.CategoryId,
-                 createdBy,
-                 null // 👈 pdfUrl şimdilik yok
-             );
-
+            dto.Title,
+            dto.Content,
+            dto.CategoryId,
+            createdBy,
+            pdfUrl);
 
         _db.Announcements.Add(entity);
         await _db.SaveChangesAsync(ct);
@@ -88,7 +91,8 @@ public class AnnouncementService : IAnnouncementService
 
     public async Task<Result> UpdateAsync(
         UpdateAnnouncementDto dto,
-        CancellationToken ct = default)
+        string? pdfUrl,
+        CancellationToken ct)
     {
         var entity = await _db.Announcements
             .FirstOrDefaultAsync(x => x.Id == dto.Id, ct);
@@ -97,22 +101,18 @@ public class AnnouncementService : IAnnouncementService
             return Result.Failure("Duyuru bulunamadı.");
 
         entity.Update(
-               dto.Title,
-               dto.Content,
-               dto.CategoryId,
-               dto.IsActive,
-               null // 👈 pdfUrl şimdilik korunmuyor
-   );
-
+            dto.Title,
+            dto.Content,
+            dto.CategoryId,
+            dto.IsActive,
+            pdfUrl);
 
         await _db.SaveChangesAsync(ct);
 
         return Result.Success("Duyuru güncellendi.");
     }
 
-    public async Task<Result> ActivateAsync(
-        Guid id,
-        CancellationToken ct = default)
+    public async Task<Result> ActivateAsync(Guid id, CancellationToken ct)
     {
         var entity = await _db.Announcements.FindAsync(new object[] { id }, ct);
 
@@ -125,9 +125,7 @@ public class AnnouncementService : IAnnouncementService
         return Result.Success();
     }
 
-    public async Task<Result> DeactivateAsync(
-        Guid id,
-        CancellationToken ct = default)
+    public async Task<Result> DeactivateAsync(Guid id, CancellationToken ct)
     {
         var entity = await _db.Announcements.FindAsync(new object[] { id }, ct);
 
@@ -140,9 +138,28 @@ public class AnnouncementService : IAnnouncementService
         return Result.Success();
     }
 
+    public async Task<Result> DeleteAsync(Guid id, CancellationToken ct)
+    {
+        var entity = await _db.Announcements
+            .FirstOrDefaultAsync(x => x.Id == id, ct);
+
+        if (entity == null)
+            return Result.Failure("Duyuru bulunamadı.");
+
+        // 🔥 PDF varsa sil
+        if (!string.IsNullOrWhiteSpace(entity.PdfUrl))
+            await _fileStorage.DeleteAsync(entity.PdfUrl, ct);
+
+        _db.Announcements.Remove(entity);
+        await _db.SaveChangesAsync(ct);
+
+        return Result.Success("Duyuru silindi.");
+    }
+
+
     // ================= PUBLIC =================
-    public async Task<Result<List<PublicAnnouncementDto>>> GetPublicAsync(
-        CancellationToken ct = default)
+
+    public async Task<Result<List<PublicAnnouncementDto>>> GetPublicAsync(CancellationToken ct)
     {
         var items = await _db.Announcements
             .AsNoTracking()
@@ -162,9 +179,7 @@ public class AnnouncementService : IAnnouncementService
         return Result<List<PublicAnnouncementDto>>.Success(items);
     }
 
-    public async Task<Result<List<PublicAnnouncementDto>>> GetPublicByCategoryAsync(
-        Guid categoryId,
-        CancellationToken ct = default)
+    public async Task<Result<List<PublicAnnouncementDto>>> GetPublicByCategoryAsync(Guid categoryId, CancellationToken ct)
     {
         var items = await _db.Announcements
             .AsNoTracking()

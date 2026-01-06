@@ -1,8 +1,9 @@
 ﻿using IzmPortal.Admin.Extensions;
-using IzmPortal.Admin.ViewModels;
+using IzmPortal.Admin.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Net.Http.Json;
+using System.Diagnostics;
+
 
 namespace IzmPortal.Admin.Controllers;
 
@@ -29,4 +30,14 @@ public class HomeController : BaseAdminController
 
         return View(dashboard);
     }
+
+    [AllowAnonymous]
+    public IActionResult Error()
+    {
+        return View(new ErrorViewModel
+        {
+            RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier
+        });
+    }
+
 }

@@ -1,0 +1,87 @@
+﻿@model IzmPortal.Application.DTOs.Menu.CreateMenuDto
+
+@{
+    ViewData["Title"] = "Yeni Menü";
+}
+
+<div class="admin-page">
+
+    @await Html.PartialAsync(
+    "_PageHeader",
+        ("Yeni Menü",
+        "Ana menü veya alt menü oluşturun",
+        "<a href='/Menus' class='btn btn-outline-secondary btn-sm'>Geri</a>")
+        )
+
+    <div class="admin-table">
+
+        <form method="post">
+
+            <div class="mb-3">
+                <label class="form-label">Menü Türü</label>
+                <select class="form-select" id="menuType">
+                    <option value="parent">Ana Menü</option>
+                    <option value="child">Alt Menü</option>
+                </select>
+            </div>
+
+            <div class="mb-3 d-none" id="parentMenuWrapper">
+                <label class="form-label">Bağlı Olduğu Ana Menü</label>
+                <select class="form-select" name="ParentId">
+                    <option value="">Seçiniz</option>
+
+                    @* SADECE ANA MENÜLER *@
+                    @foreach (var menu in ViewBag.ParentMenus as List<IzmPortal.Application.DTOs.Menu.MenuDto> ?? new())
+                    {
+                        <option value="@menu.Id">@menu.Title</option>
+                    }
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Menü Başlığı</label>
+                <input type="text"
+                       name="Title"
+                       class="form-control"
+                       required />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Sıra</label>
+                <input type="number"
+                       name="Order"
+                       class="form-control"
+                       min="1"
+                       value="1"
+                       required />
+            </div>
+
+            <div class="d-flex gap-2 mt-4">
+                <button type="submit" class="btn btn-primary btn-sm">
+                    Kaydet
+                </button>
+
+                <a href="/Menus" class="btn btn-outline-secondary btn-sm">
+                    İptal
+                </a>
+            </div>
+
+        </form>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const menuType = document.getElementById('menuType');
+        const parentWrapper = document.getElementById('parentMenuWrapper');
+
+        menuType.addEventListener('change', function () {
+            if (this.value === 'child') {
+                parentWrapper.classList.remove('d-none');
+            } else {
+                parentWrapper.classList.add('d-none');
+            }
+        });
+    </script>
+}

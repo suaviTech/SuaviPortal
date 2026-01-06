@@ -1,0 +1,119 @@
+﻿@model List<IzmPortal.Application.DTOs.Menu.MenuDto>
+
+@{
+    ViewData["Title"] = "Menüler";
+
+    var parents = Model
+        .Where(m => m.ParentId == null)
+        .OrderBy(m => m.Order)
+        .ToList();
+
+    var childrenLookup = Model
+       .Where(m => m.ParentId.HasValue)
+       .GroupBy(m => m.ParentId!.Value)
+       .ToDictionary(
+           g => g.Key,
+           g => g.OrderBy(x => x.Order).ToList()
+       );
+
+}
+
+<div class="admin-page">
+
+    @await Html.PartialAsync(
+    "_PageHeader",
+        ("Menüler",
+        "Portal navigasyon menülerini yönetin",
+        "<a href='/Menus/Create' class='btn btn-primary btn-sm'>Yeni Menü</a>")
+        )
+
+    <div class="admin-table">
+
+        @if (!Model.Any())
+        {
+            <div class="admin-empty">
+                <i class="fa fa-sitemap"></i>
+                <p>Henüz menü oluşturulmamış.</p>
+                <a href="/Menus/Create" class="btn btn-primary btn-sm">
+                    İlk Menüyü Oluştur
+                </a>
+            </div>
+        }
+        else
+        {
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Menü</th>
+                        <th style="width:120px;">Sıra</th>
+                        <th style="width:120px;">Durum</th>
+                        <th style="width:200px;" class="text-end">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                    @foreach (var menu in parents)
+                    {
+                        <tr>
+                            <td><strong>@menu.Title</strong></td>
+                            <td>@menu.Order</td>
+                            <td>
+                                @if (menu.IsActive)
+                                {
+                                    <span class="badge bg-success">Aktif</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Pasif</span>
+                                }
+                            </td>
+                            <td class="text-end">
+                                <a href="/Menus/Edit/@menu.Id"
+                                   class="btn btn-outline-secondary btn-sm">
+                                    Düzenle
+                                </a>
+                            </td>
+                        </tr>
+
+                        @if (childrenLookup.ContainsKey(menu.Id))
+                        {
+                            foreach (var sub in childrenLookup[menu.Id])
+                            {
+                                <tr>
+                                    <td class="ps-4">
+                                        <span class="text-muted">↳</span>
+                                        @sub.Title
+                                    </td>
+                                    <td>@sub.Order</td>
+                                    <td>
+                                        @if (sub.IsActive)
+                                        {
+                                            <span class="badge bg-success">Aktif</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">Pasif</span>
+                                        }
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="/Menus/Edit/@sub.Id"
+                                           class="btn btn-outline-secondary btn-sm">
+                                            Düzenle
+                                        </a>
+
+                                        <a href="/MenuDocuments/Index?menuId=@sub.Id"
+                                           class="btn btn-outline-primary btn-sm ms-1">
+                                            Dokümanlar
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    }
+
+                </tbody>
+            </table>
+        }
+
+    </div>
+</div>

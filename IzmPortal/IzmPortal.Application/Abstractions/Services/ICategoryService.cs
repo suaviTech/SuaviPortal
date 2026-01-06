@@ -32,4 +32,5 @@ public interface ICategoryService
     Task<Result> DeactivateAsync(
         Guid id,
         CancellationToken ct = default);
+
 }

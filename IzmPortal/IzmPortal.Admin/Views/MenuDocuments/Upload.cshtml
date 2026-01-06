@@ -1,47 +1,55 @@
 ﻿@{
     ViewData["Title"] = "Doküman Yükle";
-    var subMenuId = ViewBag.SubMenuId;
+    var menuId = (Guid)ViewBag.MenuId;
 }
 
-<h2>Doküman Yükle</h2>
+<div class="admin-page">
 
-<form asp-action="Upload"
-      method="post"
-      enctype="multipart/form-data">
+    @await Html.PartialAsync(
+    "_PageHeader",
+        ("Doküman Yükle",
+        "Seçilen alt menüye yeni doküman ekleyin",
+        $"<a href='/MenuDocuments/Index?menuId={menuId}' class='btn btn-outline-secondary btn-sm'>Geri</a>")
+        )
 
-    <input type="hidden"
-           name="subMenuId"
-           value="@subMenuId" />
+    <div class="admin-table">
 
-    <div class="mb-3">
-        <label class="form-label">Doküman Başlığı</label>
-        <input type="text"
-               name="title"
-               class="form-control"
-               required />
+        <form method="post"
+              enctype="multipart/form-data">
+
+            <input type="hidden" name="menuId" value="@menuId" />
+
+            <div class="mb-3">
+                <label class="form-label">Doküman Başlığı</label>
+                <input type="text"
+                       name="title"
+                       class="form-control"
+                       placeholder="Örn: Başvuru Formu" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Dosya</label>
+                <input type="file"
+                       name="file"
+                       class="form-control"
+                       accept=".pdf"
+                       required />
+                <div class="form-text">Sadece PDF dosyaları yüklenebilir.</div>
+            </div>
+
+            <div class="d-flex gap-2 mt-4">
+                <button type="submit"
+                        class="btn btn-primary btn-sm">
+                    Yükle
+                </button>
+
+                <a href="/MenuDocuments/Index?menuId=@menuId"
+                   class="btn btn-outline-secondary btn-sm">
+                    İptal
+                </a>
+            </div>
+
+        </form>
+
     </div>
-
-    <div class="mb-3">
-        <label class="form-label">PDF Dosyası</label>
-        <input type="file"
-               name="file"
-               class="form-control"
-               accept="application/pdf"
-               required />
-        <small class="text-muted">
-            Sadece PDF dosyaları yüklenebilir.
-        </small>
-    </div>
-
-    <div class="mt-4">
-        <button type="submit" class="btn btn-primary">
-            Yükle
-        </button>
-
-        <a asp-action="Index"
-           asp-route-subMenuId="@subMenuId"
-           class="btn btn-secondary ms-2">
-            İptal
-        </a>
-    </div>
-</form>
+</div>

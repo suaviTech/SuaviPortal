@@ -1,58 +1,42 @@
 ﻿@model IzmPortal.Application.DTOs.Announcement.UpdateAnnouncementDto
+@using IzmPortal.Application.DTOs.Category
 
-@{
-    ViewData["Title"] = "Duyuru Düzenle";
-    var categories =
-        ViewBag.Categories as List<IzmPortal.Application.DTOs.Category.CategoryDto>;
-}
+<form asp-action="Edit" method="post" enctype="multipart/form-data">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
 
-<div class="admin-card">
-    <h3>Duyuru Düzenle</h3>
-    <div class="subtitle">
-        Mevcut duyuru bilgilerini güncelleyin.
-    </div>
-
-    <form method="post">
-        <input type="hidden" asp-for="Id" />
+    <div class="admin-card-body">
 
         <div class="mb-3">
             <label class="form-label">Başlık</label>
-            <input asp-for="Title" class="form-control" required />
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">İçerik</label>
-            <textarea asp-for="Content"
-                      rows="6"
-                      class="form-control"></textarea>
+            <input asp-for="Title" class="form-control" />
         </div>
 
         <div class="mb-3">
             <label class="form-label">Kategori</label>
-            <select asp-for="CategoryId"
-                    asp-items="@(new SelectList(categories, "Id", "Name"))"
-                    class="form-select"
-                    required>
+            <select asp-for="CategoryId" class="form-select">
+                @foreach (var c in (List<CategoryDto>)ViewBag.Categories)
+                {
+                    <option value="@c.Id">@c.Name</option>
+                }
             </select>
         </div>
 
         <div class="mb-3">
-            <label class="form-label">PDF URL</label>
-            <input asp-for="PdfUrl" class="form-control" />
+            <label class="form-label">İçerik</label>
+            <textarea asp-for="Content" class="form-control" rows="5"></textarea>
         </div>
 
-        <div class="mb-3 form-check">
+        <div class="mb-3">
+            <label class="form-label">Yeni PDF (opsiyonel)</label>
+            <input type="file" name="pdfFile" class="form-control" />
+        </div>
+
+        <div class="form-check mb-3">
             <input asp-for="IsActive" class="form-check-input" />
             <label class="form-check-label">Aktif</label>
         </div>
 
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary">
-                Güncelle
-            </button>
-            <a asp-action="Index" class="btn btn-outline-secondary">
-                İptal
-            </a>
-        </div>
-    </form>
-</div>
+        @await Html.PartialAsync("_FormActions", "Güncelle")
+    </div>
+</form>

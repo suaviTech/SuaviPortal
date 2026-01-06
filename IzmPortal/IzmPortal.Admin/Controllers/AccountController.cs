@@ -6,7 +6,6 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text.Json;
 
-
 namespace IzmPortal.Admin.Controllers;
 
 public class AccountController : Controller
@@ -23,8 +22,9 @@ public class AccountController : Controller
     // -------------------------
     [AllowAnonymous]
     [HttpGet]
-    public IActionResult Login()
+    public IActionResult Login(string? returnUrl = null)
     {
+        ViewBag.ReturnUrl = returnUrl;
         return View();
     }
 
@@ -33,7 +33,10 @@ public class AccountController : Controller
     // -------------------------
     [AllowAnonymous]
     [HttpPost]
-    public async Task<IActionResult> Login(string email, string password)
+    public async Task<IActionResult> Login(
+        string email,
+        string password,
+        string? returnUrl = null)
     {
         var response = await _apiClient.PostAsJsonAsync(
             "/api/auth/login",
@@ -42,27 +45,34 @@ public class AccountController : Controller
         if (!response.IsSuccessStatusCode)
         {
             ViewBag.Error = "Giriş başarısız";
+            ViewBag.ReturnUrl = returnUrl;
             return View();
         }
 
         var json = await response.Content.ReadAsStringAsync();
         using var doc = JsonDocument.Parse(json);
 
-        // 🔐 TOKEN
+        // -------------------------
+        // TOKEN
+        // -------------------------
         if (!doc.RootElement.TryGetProperty("token", out var tokenElement))
         {
             ViewBag.Error = "Token alınamadı";
+            ViewBag.ReturnUrl = returnUrl;
             return View();
         }
 
         var token = tokenElement.GetString();
-        if (string.IsNullOrEmpty(token))
+        if (string.IsNullOrWhiteSpace(token))
         {
             ViewBag.Error = "Token boş";
+            ViewBag.ReturnUrl = returnUrl;
             return View();
         }
 
-        // 🔁 FORCE PASSWORD CHANGE
+        // -------------------------
+        // FORCE PASSWORD CHANGE
+        // -------------------------
         var forcePasswordChange = false;
         if (doc.RootElement.TryGetProperty("forcePasswordChange", out var fpc))
         {
@@ -73,24 +83,27 @@ public class AccountController : Controller
         // JWT → CLAIMS
         // -------------------------
         var handler = new JwtSecurityTokenHandler();
-        JwtSecurityToken jwt = handler.ReadJwtToken(token);
+        var jwt = handler.ReadJwtToken(token);
 
         var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.NameIdentifier, email), // 🔥 ZORUNLU
-                new Claim(ClaimTypes.Name, email),
-                new Claim("access_token", token)
-            };
+        {
+            new Claim(ClaimTypes.NameIdentifier, email),
+            new Claim(ClaimTypes.Name, email),
+            new Claim("access_token", token)
+        };
 
+        // ROLE CLAIMS
+        claims.AddRange(
+            jwt.Claims
+               .Where(c => c.Type == ClaimTypes.Role || c.Type == "role")
+               .Select(c => new Claim(ClaimTypes.Role, c.Value))
+        );
 
-
-        // ROLE CLAIMLERİ
-        var roleClaims = jwt.Claims
-            .Where(c => c.Type == ClaimTypes.Role || c.Type == "role")
-            .Select(c => new Claim(ClaimTypes.Role, c.Value));
-
-        claims.AddRange(roleClaims);
-
+        // FORCE PASSWORD CLAIM
+        if (forcePasswordChange)
+        {
+            claims.Add(new Claim("force_password_change", "true"));
+        }
 
         // -------------------------
         // COOKIE LOGIN
@@ -104,11 +117,16 @@ public class AccountController : Controller
             new ClaimsPrincipal(identity));
 
         // -------------------------
-        // FORCE PASSWORD CHANGE
+        // REDIRECT
         // -------------------------
         if (forcePasswordChange)
         {
-            return RedirectToAction("ChangePassword", "Account");
+            return RedirectToAction("ChangePassword");
+        }
+
+        if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+        {
+            return Redirect(returnUrl);
         }
 
         return RedirectToAction("Index", "Home");
@@ -117,6 +135,7 @@ public class AccountController : Controller
     // -------------------------
     // LOGOUT
     // -------------------------
+    [Authorize]
     public async Task<IActionResult> Logout()
     {
         await HttpContext.SignOutAsync(
@@ -137,6 +156,7 @@ public class AccountController : Controller
     // -------------------------
     // CHANGE PASSWORD (GET)
     // -------------------------
+    [Authorize]
     [HttpGet]
     public IActionResult ChangePassword()
     {
@@ -146,6 +166,7 @@ public class AccountController : Controller
     // -------------------------
     // CHANGE PASSWORD (POST)
     // -------------------------
+    [Authorize]
     [HttpPost]
     public async Task<IActionResult> ChangePassword(
         string CurrentPassword,
@@ -153,11 +174,7 @@ public class AccountController : Controller
     {
         var response = await _apiClient.PostAsJsonAsync(
             "/api/auth/change-password",
-            new
-            {
-                CurrentPassword,
-                NewPassword
-            });
+            new { CurrentPassword, NewPassword });
 
         if (!response.IsSuccessStatusCode)
         {
@@ -165,7 +182,6 @@ public class AccountController : Controller
             return View();
         }
 
-        // 🔒 Şifre değişti → logout
         await HttpContext.SignOutAsync(
             CookieAuthenticationDefaults.AuthenticationScheme);
 

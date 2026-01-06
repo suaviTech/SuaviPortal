@@ -16,18 +16,28 @@ public class MenuDocumentService : IMenuDocumentService
         _db = db;
     }
 
-    public async Task<Result<List<MenuDocumentDto>>> GetBySubMenuAsync(
-        Guid subMenuId,
+    // LIST – Dokümanlar (SADECE alt menü olan MenuId)
+    public async Task<Result<List<MenuDocumentDto>>> GetByMenuAsync(
+        Guid menuId,
         CancellationToken ct = default)
     {
+        // Menü var mı + alt menü mü?
+        var menu = await _db.Menus
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == menuId, ct);
+
+        if (menu == null || menu.ParentId == null)
+            return Result<List<MenuDocumentDto>>
+                .Failure("Dokümanlar yalnızca alt menüler için listelenebilir.");
+
         var items = await _db.MenuDocuments
             .AsNoTracking()
-            .Where(x => x.SubMenuId == subMenuId)
+            .Where(x => x.MenuId == menuId)
             .OrderBy(x => x.Order)
             .Select(x => new MenuDocumentDto
             {
                 Id = x.Id,
-                SubMenuId = x.SubMenuId,
+                MenuId = x.MenuId,
                 Title = x.Title,
                 FilePath = x.FilePath,
                 Order = x.Order,
@@ -39,22 +49,27 @@ public class MenuDocumentService : IMenuDocumentService
         return Result<List<MenuDocumentDto>>.Success(items);
     }
 
+    // CREATE – Upload
     public async Task<Result> CreateAsync(
         CreateMenuDocumentDto dto,
         string filePath,
         CancellationToken ct = default)
     {
-        var subMenu = await _db.SubMenus
-            .FirstOrDefaultAsync(x => x.Id == dto.SubMenuId, ct);
+        // Menü var mı + alt menü mü?
+        var menu = await _db.Menus
+            .FirstOrDefaultAsync(x => x.Id == dto.MenuId, ct);
 
-        if (subMenu == null)
-            return Result.Failure("Alt menü bulunamadı.");
+        if (menu == null)
+            return Result.Failure("Menü bulunamadı.");
 
-        if (!subMenu.IsActive)
-            return Result.Failure("Pasif alt menüye doküman eklenemez.");
+        if (menu.ParentId == null)
+            return Result.Failure("Ana menülere doküman eklenemez.");
+
+        if (!menu.IsActive)
+            return Result.Failure("Pasif menüye doküman eklenemez.");
 
         var maxOrder = await _db.MenuDocuments
-            .Where(x => x.SubMenuId == dto.SubMenuId)
+            .Where(x => x.MenuId == dto.MenuId)
             .Select(x => (int?)x.Order)
             .MaxAsync(ct) ?? 0;
 
@@ -64,7 +79,7 @@ public class MenuDocumentService : IMenuDocumentService
             dto.Title,
             filePath,
             nextOrder,
-            dto.SubMenuId);
+            dto.MenuId);
 
         _db.MenuDocuments.Add(entity);
         await _db.SaveChangesAsync(ct);
@@ -72,6 +87,7 @@ public class MenuDocumentService : IMenuDocumentService
         return Result.Success("Doküman eklendi.");
     }
 
+    // UPDATE – Title
     public async Task<Result> UpdateAsync(
         UpdateMenuDocumentDto dto,
         CancellationToken ct = default)
@@ -88,6 +104,7 @@ public class MenuDocumentService : IMenuDocumentService
         return Result.Success("Doküman güncellendi.");
     }
 
+    // ACTIVATE
     public async Task<Result> ActivateAsync(Guid id, CancellationToken ct = default)
     {
         var entity = await _db.MenuDocuments.FindAsync(new object[] { id }, ct);
@@ -100,6 +117,7 @@ public class MenuDocumentService : IMenuDocumentService
         return Result.Success("Doküman aktif edildi.");
     }
 
+    // DEACTIVATE (Soft delete)
     public async Task<Result> DeactivateAsync(Guid id, CancellationToken ct = default)
     {
         var entity = await _db.MenuDocuments.FindAsync(new object[] { id }, ct);

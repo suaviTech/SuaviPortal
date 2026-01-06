@@ -1,49 +1,33 @@
 ﻿@model IzmPortal.Application.DTOs.Announcement.AnnouncementDto
+@using IzmPortal.Application.Common
 
 @{
-    ViewData["Title"] = "Duyuru Önizleme";
+    ViewData["Title"] = "Duyuru Detayı";
+    var apiBaseUrl = ViewData["ApiBaseUrl"] as string;
 }
 
-<div class="card">
-    <div class="card-header">
-        Duyuru Önizleme
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h5>@Model.Title</h5>
+        <small class="text-muted">@Model.CategoryName</small>
     </div>
 
-    <div class="card-body">
-        <h4>@Model.Title</h4>
+    <div class="admin-card-body">
+        <p>@Model.Content</p>
 
-        <div class="text-muted mb-2">
-            @Model.CategoryName ·
-            @Model.CreatedAt.ToString("dd.MM.yyyy")
-        </div>
-
-        @if (!string.IsNullOrWhiteSpace(Model.PdfUrl))
+        @if (!string.IsNullOrWhiteSpace(Model.PdfUrl) && !string.IsNullOrWhiteSpace(apiBaseUrl))
         {
-            <div class="mb-3">
-                <button class="btn btn-outline-secondary btn-sm"
-                        onclick="openPdfModal('@Model.PdfUrl', 'Duyuru PDF')">
-                    PDF Görüntüle
-                </button>
-            </div>
+            var pdfUrl = FileUrlBuilder.Build(apiBaseUrl!, Model.PdfUrl);
+            <hr />
+            <a href="@pdfUrl" target="_blank" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-file-earmark-pdf"></i> PDF Aç
+            </a>
         }
-
-        <hr />
-
-        <div>
-            @Html.Raw(Model.Content)
-        </div>
     </div>
 
-    <div class="card-footer text-end">
-        <a asp-action="Edit"
-           asp-route-id="@Model.Id"
-           class="btn btn-warning btn-sm">
-            Düzenle
-        </a>
-
-        <a asp-action="Index"
-           class="btn btn-outline-secondary btn-sm">
-            Geri
+    <div class="admin-card-footer text-end">
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+            Geri Dön
         </a>
     </div>
 </div>

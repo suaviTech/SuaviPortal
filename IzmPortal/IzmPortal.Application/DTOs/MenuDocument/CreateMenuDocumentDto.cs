@@ -2,6 +2,6 @@
 
 public class CreateMenuDocumentDto
 {
-    public Guid SubMenuId { get; set; }
-    public string Title { get; set; } = null!;
+    public Guid MenuId { get; set; }
+    public string? Title { get; set; }
 }

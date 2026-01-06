@@ -1,11 +1,9 @@
 ﻿using IzmPortal.Admin.Extensions;
 using IzmPortal.Application.DTOs.Category;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IzmPortal.Admin.Controllers;
 
-[Authorize]
 public class CategoriesController : BaseAdminController
 {
     public CategoriesController(IHttpClientFactory factory)
@@ -13,12 +11,12 @@ public class CategoriesController : BaseAdminController
     {
     }
 
-    // --------------------------------------------------
+    // =======================
     // LIST
-    // --------------------------------------------------
+    // =======================
     public async Task<IActionResult> Index(CancellationToken ct)
     {
-        var response = await Api.GetAsync("/api/categories", ct);
+        var response = await Api.GetAsync("/api/categories/admin", ct);
 
         var failure = await HandleApiFailureAsync(
             response,
@@ -33,17 +31,17 @@ public class CategoriesController : BaseAdminController
         return View(items);
     }
 
-    // --------------------------------------------------
+    // =======================
     // CREATE (GET)
-    // --------------------------------------------------
+    // =======================
     public IActionResult Create()
     {
         return View();
     }
 
-    // --------------------------------------------------
+    // =======================
     // CREATE (POST)
-    // --------------------------------------------------
+    // =======================
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(
         CreateCategoryDto dto,
@@ -66,9 +64,9 @@ public class CategoriesController : BaseAdminController
             "Kategori başarıyla oluşturuldu.");
     }
 
-    // --------------------------------------------------
+    // =======================
     // EDIT (GET)
-    // --------------------------------------------------
+    // =======================
     public async Task<IActionResult> Edit(Guid id, CancellationToken ct)
     {
         var response = await Api.GetAsync(
@@ -76,7 +74,7 @@ public class CategoriesController : BaseAdminController
 
         var failure = await HandleApiFailureAsync(
             response,
-            "Kategori bulunamadı.");
+            "Kategori bilgileri alınamadı.");
 
         if (failure != null)
             return failure;
@@ -85,7 +83,10 @@ public class CategoriesController : BaseAdminController
             .ReadContentAsync<CategoryDto>();
 
         if (item == null)
-            return NotFound();
+            return SuccessAndRedirect(
+                "Kategori bulunamadı.",
+                controller: "Categories");
+
 
         return View(new UpdateCategoryDto
         {
@@ -94,9 +95,9 @@ public class CategoriesController : BaseAdminController
         });
     }
 
-    // --------------------------------------------------
+    // =======================
     // EDIT (POST)
-    // --------------------------------------------------
+    // =======================
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(
         UpdateCategoryDto dto,
@@ -117,5 +118,49 @@ public class CategoriesController : BaseAdminController
 
         return SuccessAndRedirect(
             "Kategori başarıyla güncellendi.");
+    }
+
+    // =======================
+    // ACTIVATE
+    // =======================
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> Activate(Guid id, CancellationToken ct)
+    {
+        var response = await Api.PutAsync(
+            $"/api/categories/{id}/activate",
+            null,
+            ct);
+
+        var failure = await HandleApiFailureAsync(
+            response,
+            "Kategori aktifleştirilemedi.");
+
+        if (failure != null)
+            return failure;
+
+        return SuccessAndRedirect(
+            "Kategori aktifleştirildi.");
+    }
+
+    // =======================
+    // DEACTIVATE
+    // =======================
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> Deactivate(Guid id, CancellationToken ct)
+    {
+        var response = await Api.PutAsync(
+            $"/api/categories/{id}/deactivate",
+            null,
+            ct);
+
+        var failure = await HandleApiFailureAsync(
+            response,
+            "Kategori pasifleştirilemedi.");
+
+        if (failure != null)
+            return failure;
+
+        return SuccessAndRedirect(
+            "Kategori pasifleştirildi.");
     }
 }

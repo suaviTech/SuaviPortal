@@ -1,13 +1,38 @@
-﻿@if (TempData["Success"] != null)
+﻿@{
+    var success = TempData["Success"];
+    var error = TempData["Error"];
+    var warning = TempData["Warning"];
+    var info = TempData["Info"];
+}
+
+@if (success != null)
 {
-    <div class="alert alert-success">
-        @TempData["Success"]
+    <div class="admin-alert admin-alert-success mb-3">
+        <i class="bi bi-check-circle me-1"></i>
+        @success
     </div>
 }
 
-@if (TempData["Error"] != null)
+@if (error != null)
 {
-    <div class="alert alert-danger">
-        @TempData["Error"]
+    <div class="admin-alert admin-alert-error mb-3">
+        <i class="bi bi-x-circle me-1"></i>
+        @error
+    </div>
+}
+
+@if (warning != null)
+{
+    <div class="admin-alert admin-alert-warning mb-3">
+        <i class="bi bi-exclamation-triangle me-1"></i>
+        @warning
+    </div>
+}
+
+@if (info != null)
+{
+    <div class="admin-alert admin-alert-info mb-3">
+        <i class="bi bi-info-circle me-1"></i>
+        @info
     </div>
 }

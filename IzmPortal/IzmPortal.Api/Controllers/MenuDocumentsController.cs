@@ -1,6 +1,6 @@
 ﻿using IzmPortal.Application.Abstractions.Services;
+using IzmPortal.Application.Common;
 using IzmPortal.Application.DTOs.MenuDocument;
-using IzmPortal.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,15 +18,24 @@ public class MenuDocumentsController : ControllerBase
         _service = service;
     }
 
-    [HttpGet("by-submenu/{subMenuId:guid}")]
-    public async Task<IActionResult> GetBySubMenu(
-        Guid subMenuId,
+    // ==================================================
+    // GET: api/menu-documents/by-menu/{menuId}
+    // ==================================================
+    [HttpGet("by-menu/{menuId:guid}")]
+    public async Task<IActionResult> GetByMenu(
+        Guid menuId,
         CancellationToken ct)
     {
-        var result = await _service.GetBySubMenuAsync(subMenuId, ct);
-        return Ok(result.Data);
+        var result = await _service.GetByMenuAsync(menuId, ct);
+
+        return result.Succeeded
+            ? Ok(result)
+            : NotFound(result);
     }
 
+    // ==================================================
+    // POST: api/menu-documents
+    // ==================================================
     [HttpPost]
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> Create(
@@ -35,33 +44,53 @@ public class MenuDocumentsController : ControllerBase
         CancellationToken ct)
     {
         if (file == null || file.Length == 0)
-            return BadRequest("Dosya zorunludur.");
+        {
+            return BadRequest(
+                Result.Failure("Dosya zorunludur."));
+        }
 
-        var uploads = Path.Combine("wwwroot", "docs");
+        var uploads = Path.Combine(
+            "wwwroot",
+            "docs");
+
         Directory.CreateDirectory(uploads);
 
-        var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
-        var filePath = Path.Combine(uploads, fileName);
+        var fileName =
+            $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
 
-        await using var stream = new FileStream(filePath, FileMode.Create);
-        await file.CopyToAsync(stream, ct);
+        var filePath =
+            Path.Combine(uploads, fileName);
+
+        await using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream, ct);
+        }
+
+        var documentPath = $"/docs/{fileName}";
 
         var result = await _service.CreateAsync(
             dto,
-            $"/docs/{fileName}",
+            documentPath,
             ct);
 
         return result.Succeeded
-            ? Ok(result.Message)
-            : BadRequest(result.Message);
+            ? Ok(result)
+            : BadRequest(result);
     }
 
+    // ==================================================
+    // DELETE: api/menu-documents/{id}
+    // (Soft delete)
+    // ==================================================
     [HttpDelete("{id:guid}")]
-    public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
+    public async Task<IActionResult> Delete(
+        Guid id,
+        CancellationToken ct)
     {
         var result = await _service.DeactivateAsync(id, ct);
+
         return result.Succeeded
-            ? Ok(result.Message)
-            : NotFound(result.Message);
+            ? Ok(result)
+            : NotFound(result);
     }
 }

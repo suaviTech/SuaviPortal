@@ -1,35 +1,21 @@
 ﻿@model IzmPortal.Application.DTOs.Announcement.CreateAnnouncementDto
+@using IzmPortal.Application.DTOs.Category
 
-@{
-    ViewData["Title"] = "Yeni Duyuru";
-    var categories =
-        ViewBag.Categories as List<IzmPortal.Application.DTOs.Category.CategoryDto>;
-}
+<form asp-action="Create" method="post" enctype="multipart/form-data">
+    @Html.AntiForgeryToken()
 
-<div class="admin-card">
-    <h3>Yeni Duyuru</h3>
-    <div class="subtitle">
-        Portalda yayınlanacak yeni bir duyuru oluşturun.
-    </div>
+    <div class="admin-card-body">
 
-    <form method="post">
         <div class="mb-3">
             <label class="form-label">Başlık</label>
-            <input asp-for="Title" class="form-control" required />
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">İçerik</label>
-            <textarea asp-for="Content"
-                      rows="6"
-                      class="form-control"></textarea>
+            <input asp-for="Title" class="form-control" />
         </div>
 
         <div class="mb-3">
             <label class="form-label">Kategori</label>
-            <select asp-for="CategoryId" class="form-select" required>
-                <option value="">Seçiniz</option>
-                @foreach (var c in categories!)
+            <select asp-for="CategoryId" class="form-select">
+                <option value="">Kategori seçiniz</option>
+                @foreach (var c in (List<CategoryDto>)ViewBag.Categories)
                 {
                     <option value="@c.Id">@c.Name</option>
                 }
@@ -37,19 +23,15 @@
         </div>
 
         <div class="mb-3">
-            <label class="form-label">PDF URL (opsiyonel)</label>
-            <input asp-for="PdfUrl"
-                   class="form-control"
-                   placeholder="/docs/duyurular/ornek.pdf" />
+            <label class="form-label">İçerik</label>
+            <textarea asp-for="Content" class="form-control" rows="5"></textarea>
         </div>
 
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary">
-                Kaydet
-            </button>
-            <a asp-action="Index" class="btn btn-outline-secondary">
-                İptal
-            </a>
+        <div class="mb-3">
+            <label class="form-label">PDF (opsiyonel)</label>
+            <input type="file" name="pdfFile" class="form-control" />
         </div>
-    </form>
-</div>
+
+        @await Html.PartialAsync("_FormActions", "Kaydet")
+    </div>
+</form>

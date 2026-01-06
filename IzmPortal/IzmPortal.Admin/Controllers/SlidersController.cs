@@ -1,11 +1,9 @@
 ﻿using IzmPortal.Admin.Extensions;
 using IzmPortal.Application.DTOs.Slider;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IzmPortal.Admin.Controllers;
 
-[Authorize]
 public class SlidersController : BaseAdminController
 {
     public SlidersController(IHttpClientFactory factory)
@@ -13,9 +11,9 @@ public class SlidersController : BaseAdminController
     {
     }
 
-    // --------------------------------------------------
+    // =======================
     // LIST
-    // --------------------------------------------------
+    // =======================
     public async Task<IActionResult> Index(CancellationToken ct)
     {
         var response = await Api.GetAsync("/api/sliders", ct);
@@ -33,35 +31,47 @@ public class SlidersController : BaseAdminController
         return View(items);
     }
 
-    // --------------------------------------------------
+    // =======================
     // UPLOAD (GET)
-    // --------------------------------------------------
+    // =======================
     public IActionResult Upload()
     {
         return View();
     }
 
-    // --------------------------------------------------
+    // =======================
     // UPLOAD (POST)
-    // --------------------------------------------------
+    // =======================
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Upload(
-        string? title,
+        CreateSliderDto dto,
         IFormFile file,
         CancellationToken ct)
     {
-        if (file == null || file.Length == 0)
+        if (!ModelState.IsValid || file == null || file.Length == 0)
         {
-            ModelState.AddModelError("", "Resim seçilmedi.");
-            return View();
+            ModelState.AddModelError(
+                nameof(file),
+                "Resim seçilmedi.");
+
+            return View(dto);
         }
 
         using var content = new MultipartFormDataContent();
-        content.Add(new StringContent(title ?? string.Empty), "Title");
-        content.Add(new StreamContent(file.OpenReadStream()), "File", file.FileName);
+
+        content.Add(
+            new StringContent(dto.Title ?? string.Empty),
+            nameof(CreateSliderDto.Title));
+
+        content.Add(
+            new StreamContent(file.OpenReadStream()),
+            nameof(file),
+            file.FileName);
 
         var response = await Api.PostAsync(
-            "/api/sliders", content, ct);
+            "/api/sliders",
+            content,
+            ct);
 
         var failure = await HandleApiFailureAsync(
             response,
@@ -70,17 +80,19 @@ public class SlidersController : BaseAdminController
         if (failure != null)
             return failure;
 
-        return SuccessAndRedirect("Slider başarıyla eklendi.");
+        return SuccessAndRedirect(
+            "Slider başarıyla eklendi.");
     }
 
-    // --------------------------------------------------
+    // =======================
     // DELETE
-    // --------------------------------------------------
-    [HttpPost]
+    // =======================
+    [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         var response = await Api.DeleteAsync(
-            $"/api/sliders/{id}", ct);
+            $"/api/sliders/{id}",
+            ct);
 
         var failure = await HandleApiFailureAsync(
             response,
@@ -89,6 +101,7 @@ public class SlidersController : BaseAdminController
         if (failure != null)
             return failure;
 
-        return SuccessAndRedirect("Slider silindi.");
+        return SuccessAndRedirect(
+            "Slider silindi.");
     }
 }

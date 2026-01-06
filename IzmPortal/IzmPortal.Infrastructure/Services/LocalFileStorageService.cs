@@ -40,7 +40,7 @@ public class LocalFileStorageService : IFileStorageService
 
         await fileStream.CopyToAsync(stream, ct);
 
-        // DB’de saklanacak relative path
+        // DB'de saklanacak RELATIVE PATH
         return Path
             .Combine("uploads", folder, uniqueFileName)
             .Replace("\\", "/");
@@ -50,6 +50,9 @@ public class LocalFileStorageService : IFileStorageService
         string relativePath,
         CancellationToken ct = default)
     {
+        if (string.IsNullOrWhiteSpace(relativePath))
+            return Task.CompletedTask;
+
         var fullPath = Path.Combine(
             _env.WebRootPath,
             relativePath.Replace(

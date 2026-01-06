@@ -1,0 +1,107 @@
+﻿@using Microsoft.AspNetCore.Mvc.Rendering
+
+@{
+    var currentController =
+        ViewContext.RouteData.Values["controller"]?.ToString();
+}
+
+<nav class="sidebar-nav">
+
+    <div class="sidebar-header">
+        <span class="sidebar-logo">IP</span>
+        <span class="sidebar-title">IzmPortal</span>
+    </div>
+
+    <ul class="sidebar-menu">
+
+        <li class="menu-root">
+            <a asp-controller="Home"
+               asp-action="Index"
+               class="@(currentController == "Home" ? "active" : "")">
+                Dashboard
+            </a>
+        </li>
+
+        <li class="menu-section">İçerik Yönetimi</li>
+
+        <li class="menu-child">
+            <a asp-controller="Categories"
+               asp-action="Index"
+               class="@(currentController == "Categories" ? "active" : "")">
+                Kategori Yönetimi
+            </a>
+        </li>
+
+        <li class="menu-child">
+            <a asp-controller="Announcements"
+               asp-action="Index"
+               class="@(currentController == "Announcements" ? "active" : "")">
+                Duyuru Yönetimi
+            </a>
+        </li>
+
+        <li class="menu-child">
+            <a asp-controller="Sliders"
+               asp-action="Index"
+               class="@(currentController == "Sliders" ? "active" : "")">
+                Slider Resim Yönetimi
+            </a>
+        </li>
+
+        <li class="menu-section">Uygulamalar</li>
+
+        <li class="menu-child">
+            <a asp-controller="ApplicationShortcuts"
+               asp-action="Index"
+               class="@(currentController == "ApplicationShortcuts" ? "active" : "")">
+                Uygulama Link Yönetimi
+            </a>
+        </li>
+
+        <li class="menu-section">Menü Yönetimi</li>
+
+        <li class="menu-child">
+            <a asp-controller="Menus"
+               asp-action="Index"
+               class="@(currentController == "Menus" ? "active" : "")">
+                Menü Yönetimi
+            </a>
+        </li>
+
+        <li class="menu-child">
+            <a asp-controller="MenuDocuments"
+               asp-action="Index"
+               class="@(currentController == "MenuDocuments" ? "active" : "")">
+                Menü Dokümanları
+            </a>
+        </li>
+
+        @if (User.IsInRole("SuperAdmin"))
+        {
+            <li class="menu-section">Sistem</li>
+
+            <li class="menu-child">
+                <a asp-controller="Users"
+                   asp-action="Index"
+                   class="@(currentController == "Users" ? "active" : "")">
+                    Kullanıcı Yönetimi
+                </a>
+            </li>
+
+            <li class="menu-child">
+                <a asp-controller="AuditLogs"
+                   asp-action="Index"
+                   class="@(currentController == "AuditLogs" ? "active" : "")">
+                    Audit Loglar
+                </a>
+            </li>
+        }
+
+    </ul>
+
+    <div class="sidebar-footer">
+        Bilgi Teknolojileri<br />
+        Şube Müdürlüğü
+    </div>
+
+</nav>

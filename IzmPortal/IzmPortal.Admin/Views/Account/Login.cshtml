@@ -1,25 +1,96 @@
 ﻿@{
-    ViewData["Title"] = "Admin Giriş";
+    Layout = null;
+    ViewData["Title"] = "Giriş";
 }
 
-<div class="login-wrapper">
-    <div class="login-card">
-        <h1>IzmPortal Admin</h1>
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <title>Giriş - IzmPortal</title>
 
-        @if (ViewBag.Error != null)
-        {
-            <div class="error">@ViewBag.Error</div>
-        }
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/admin-theme.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" />
+</head>
 
-        <form method="post">
-            <label>E-posta</label>
-            <input type="email" name="email" required />
+<body class="admin-login-body">
 
-            <label>Şifre</label>
-            <input type="password" name="password" required />
+    <div class="login-wrapper">
+        <div class="login-card">
 
-            <button type="submit">Giriş Yap</button>
-        </form>
+            <h1 class="login-title">IzmPortal Admin</h1>
+            <p class="login-subtitle">Giriş yapınız</p>
+
+            <!-- LOGIN ERROR (ViewBag) -->
+            @if (ViewBag.Error != null)
+            {
+                <div class="alert alert-danger">
+                    @ViewBag.Error
+                </div>
+            }
+
+            <!-- GLOBAL ALERTS (TempData) -->
+            @await Html.PartialAsync("_Alerts")
+
+            <form method="post">
+
+                <!-- RETURN URL -->
+                <input type="hidden"
+                       name="returnUrl"
+                       value="@ViewBag.ReturnUrl" />
+
+                <!-- EMAIL -->
+                <div class="mb-3">
+                    <input type="email"
+                           name="email"
+                           class="form-control"
+                           placeholder="E-posta"
+                           required
+                           autofocus />
+                </div>
+
+                <!-- PASSWORD -->
+                <div class="mb-4 position-relative">
+                    <input type="password"
+                           name="password"
+                           id="password"
+                           class="form-control"
+                           placeholder="Şifre"
+                           required />
+
+                    <span class="password-toggle"
+                          onclick="togglePassword()">
+                        <i class="bi bi-eye"></i>
+                    </span>
+                </div>
+
+                <!-- GİRİŞ BUTONU -->
+                <button type="submit"
+                        class="btn btn-primary w-100">
+                    Giriş Yap
+                </button>
+            </form>
+
+        </div>
     </div>
-</div>
 
+    <script>
+        function togglePassword() {
+            const input = document.getElementById('password');
+            const icon = document.querySelector('.password-toggle i');
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
+            }
+        }
+    </script>
+
+</body>
+</html>

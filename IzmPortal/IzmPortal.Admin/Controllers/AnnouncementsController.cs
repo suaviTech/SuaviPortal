@@ -1,12 +1,10 @@
 ﻿using IzmPortal.Admin.Extensions;
 using IzmPortal.Application.DTOs.Announcement;
 using IzmPortal.Application.DTOs.Category;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IzmPortal.Admin.Controllers;
 
-[Authorize]
 public class AnnouncementsController : BaseAdminController
 {
     public AnnouncementsController(IHttpClientFactory factory)
@@ -14,10 +12,9 @@ public class AnnouncementsController : BaseAdminController
     {
     }
 
-    // --------------------------------------------------
+    // =======================
     // LIST
-    // GET: /Announcements
-    // --------------------------------------------------
+    // =======================
     public async Task<IActionResult> Index(CancellationToken ct)
     {
         var response = await Api.GetAsync("/api/announcements", ct);
@@ -35,39 +32,41 @@ public class AnnouncementsController : BaseAdminController
         return View(items);
     }
 
-    // --------------------------------------------------
+    // =======================
     // CREATE (GET)
-    // --------------------------------------------------
+    // =======================
     public async Task<IActionResult> Create(CancellationToken ct)
     {
-        var categoryResponse = await Api.GetAsync("/api/categories", ct);
+        var categories = await LoadCategoriesAsync(ct);
+        if (categories.failure != null)
+            return categories.failure;
 
-        var failure = await HandleApiFailureAsync(
-            categoryResponse,
-            "Kategoriler alınamadı.");
-
-        if (failure != null)
-            return failure;
-
-        ViewBag.Categories = await categoryResponse
-            .ReadContentAsync<List<CategoryDto>>() ?? new();
-
+        ViewBag.Categories = categories.items;
         return View();
     }
 
-    // --------------------------------------------------
+    // =======================
     // CREATE (POST)
-    // --------------------------------------------------
+    // =======================
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(
         CreateAnnouncementDto dto,
+        IFormFile? pdfFile,
         CancellationToken ct)
     {
         if (!ModelState.IsValid)
+        {
+            var categories = await LoadCategoriesAsync(ct);
+            ViewBag.Categories = categories.items;
             return View(dto);
+        }
 
-        var response = await Api.PostAsJsonAsync(
-            "/api/announcements", dto, ct);
+        using var content = BuildMultipart(dto, pdfFile);
+
+        var response = await Api.PostAsync(
+            "/api/announcements",
+            content,
+            ct);
 
         var failure = await HandleApiFailureAsync(
             response,
@@ -80,9 +79,9 @@ public class AnnouncementsController : BaseAdminController
             "Duyuru başarıyla oluşturuldu.");
     }
 
-    // --------------------------------------------------
+    // =======================
     // EDIT (GET)
-    // --------------------------------------------------
+    // =======================
     public async Task<IActionResult> Edit(Guid id, CancellationToken ct)
     {
         var response = await Api.GetAsync(
@@ -90,7 +89,7 @@ public class AnnouncementsController : BaseAdminController
 
         var failure = await HandleApiFailureAsync(
             response,
-            "Duyuru bulunamadı.");
+            "Duyuru bilgileri alınamadı.");
 
         if (failure != null)
             return failure;
@@ -99,19 +98,15 @@ public class AnnouncementsController : BaseAdminController
             .ReadContentAsync<AnnouncementDto>();
 
         if (item == null)
-            return NotFound();
+            return SuccessAndRedirect(
+                "Duyuru bulunamadı.",
+                controller: "Announcements");
 
-        var categoryResponse = await Api.GetAsync("/api/categories", ct);
+        var categories = await LoadCategoriesAsync(ct);
+        if (categories.failure != null)
+            return categories.failure;
 
-        failure = await HandleApiFailureAsync(
-            categoryResponse,
-            "Kategoriler alınamadı.");
-
-        if (failure != null)
-            return failure;
-
-        ViewBag.Categories = await categoryResponse
-            .ReadContentAsync<List<CategoryDto>>() ?? new();
+        ViewBag.Categories = categories.items;
 
         return View(new UpdateAnnouncementDto
         {
@@ -119,23 +114,33 @@ public class AnnouncementsController : BaseAdminController
             Title = item.Title,
             Content = item.Content,
             CategoryId = item.CategoryId,
-            IsActive = item.IsActive
+            IsActive = item.IsActive,
+            ExistingPdfUrl = item.PdfUrl
         });
     }
 
-    // --------------------------------------------------
+    // =======================
     // EDIT (POST)
-    // --------------------------------------------------
+    // =======================
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(
         UpdateAnnouncementDto dto,
+        IFormFile? pdfFile,
         CancellationToken ct)
     {
         if (!ModelState.IsValid)
+        {
+            var categories = await LoadCategoriesAsync(ct);
+            ViewBag.Categories = categories.items;
             return View(dto);
+        }
 
-        var response = await Api.PutAsJsonAsync(
-            $"/api/announcements/{dto.Id}", dto, ct);
+        using var content = BuildMultipart(dto, pdfFile);
+
+        var response = await Api.PutAsync(
+            $"/api/announcements/{dto.Id}",
+            content,
+            ct);
 
         var failure = await HandleApiFailureAsync(
             response,
@@ -148,14 +153,16 @@ public class AnnouncementsController : BaseAdminController
             "Duyuru başarıyla güncellendi.");
     }
 
-    // --------------------------------------------------
+    // =======================
     // ACTIVATE
-    // --------------------------------------------------
-    [HttpPost]
+    // =======================
+    [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Activate(Guid id, CancellationToken ct)
     {
         var response = await Api.PutAsync(
-            $"/api/announcements/{id}/activate", null, ct);
+            $"/api/announcements/{id}/activate",
+            null,
+            ct);
 
         var failure = await HandleApiFailureAsync(
             response,
@@ -168,14 +175,16 @@ public class AnnouncementsController : BaseAdminController
             "Duyuru aktifleştirildi.");
     }
 
-    // --------------------------------------------------
+    // =======================
     // DEACTIVATE
-    // --------------------------------------------------
-    [HttpPost]
+    // =======================
+    [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Deactivate(Guid id, CancellationToken ct)
     {
         var response = await Api.PutAsync(
-            $"/api/announcements/{id}/deactivate", null, ct);
+            $"/api/announcements/{id}/deactivate",
+            null,
+            ct);
 
         var failure = await HandleApiFailureAsync(
             response,
@@ -188,28 +197,90 @@ public class AnnouncementsController : BaseAdminController
             "Duyuru pasifleştirildi.");
     }
 
-    // --------------------------------------------------
-    // DETAILS (READ-ONLY PREVIEW)
-    // --------------------------------------------------
-    public async Task<IActionResult> Details(Guid id, CancellationToken ct)
+    // =======================
+    // DELETE
+    // =======================
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
-        var response = await Api.GetAsync(
-            $"/api/announcements/{id}", ct);
+        var response = await Api.DeleteAsync(
+            $"/api/announcements/{id}",
+            ct);
 
         var failure = await HandleApiFailureAsync(
             response,
-            "Duyuru bulunamadı.");
+            "Duyuru silinemedi.");
 
         if (failure != null)
             return failure;
 
-        var item = await response
-            .ReadContentAsync<AnnouncementDto>();
-
-        if (item == null)
-            return NotFound();
-
-        return View(item);
+        return SuccessAndRedirect(
+            "Duyuru silindi.");
     }
 
+    // =======================
+    // HELPERS
+    // =======================
+    private async Task<(List<CategoryDto> items, IActionResult? failure)>
+        LoadCategoriesAsync(CancellationToken ct)
+    {
+        var response = await Api.GetAsync("/api/categories", ct);
+
+        var failure = await HandleApiFailureAsync(
+            response,
+            "Kategoriler alınamadı.");
+
+        if (failure != null)
+            return (new List<CategoryDto>(), failure);
+
+        var items = await response
+            .ReadContentAsync<List<CategoryDto>>() ?? new();
+
+        return (items, null);
+    }
+
+    private static MultipartFormDataContent BuildMultipart(
+        CreateAnnouncementDto dto,
+        IFormFile? pdfFile)
+    {
+        var content = new MultipartFormDataContent();
+
+        content.Add(new StringContent(dto.Title), nameof(dto.Title));
+        content.Add(new StringContent(dto.Content), nameof(dto.Content));
+        content.Add(new StringContent(dto.CategoryId.ToString()), nameof(dto.CategoryId));
+
+        if (pdfFile != null && pdfFile.Length > 0)
+        {
+            content.Add(
+                new StreamContent(pdfFile.OpenReadStream()),
+                "pdfFile",
+                pdfFile.FileName);
+        }
+
+        return content;
+    }
+
+    private static MultipartFormDataContent BuildMultipart(
+        UpdateAnnouncementDto dto,
+        IFormFile? pdfFile)
+    {
+        var content = new MultipartFormDataContent();
+
+        content.Add(new StringContent(dto.Id.ToString()), nameof(dto.Id));
+        content.Add(new StringContent(dto.Title), nameof(dto.Title));
+        content.Add(new StringContent(dto.Content), nameof(dto.Content));
+        content.Add(new StringContent(dto.CategoryId.ToString()), nameof(dto.CategoryId));
+        content.Add(new StringContent(dto.IsActive.ToString()), nameof(dto.IsActive));
+        content.Add(new StringContent(dto.ExistingPdfUrl ?? ""), nameof(dto.ExistingPdfUrl));
+
+        if (pdfFile != null && pdfFile.Length > 0)
+        {
+            content.Add(
+                new StreamContent(pdfFile.OpenReadStream()),
+                "pdfFile",
+                pdfFile.FileName);
+        }
+
+        return content;
+    }
 }

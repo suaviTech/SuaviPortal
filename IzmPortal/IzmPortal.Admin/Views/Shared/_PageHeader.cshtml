@@ -1,12 +1,21 @@
-﻿@model (string Title, string? Subtitle)
+﻿@model IzmPortal.Admin.Models.ViewModels.PageHeaderVm
 
-<div class="content-header">
-    <h1 class="page-title">@Model.Title</h1>
+<div class="page-header mb-4">
+    <div>
+        <h1 class="mb-1">@Model.Title</h1>
 
-    @if (!string.IsNullOrEmpty(Model.Subtitle))
+        @if (!string.IsNullOrWhiteSpace(Model.Subtitle))
+        {
+            <p class="text-muted mb-0">@Model.Subtitle</p>
+        }
+    </div>
+
+    @if (Model.Actions != null)
     {
-        <div class="text-muted mt-1">
-            @Model.Subtitle
+        <div>
+            @Model.Actions
         </div>
     }
 </div>
+
+

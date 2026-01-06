@@ -7,6 +7,10 @@ public class Category : BaseEntity
     public string Name { get; private set; } = null!;
     public bool IsActive { get; private set; } = true;
 
+    // 🔗 NAVIGATION
+    public ICollection<Announcement> Announcements { get; private set; }
+        = new List<Announcement>();
+
     protected Category() { }
 
     public Category(string name)
@@ -23,5 +27,9 @@ public class Category : BaseEntity
     }
 
     public void Activate() => IsActive = true;
-    public void Deactivate() => IsActive = false;
+
+    public void Deactivate()
+    {
+        IsActive = false;
+    }
 }

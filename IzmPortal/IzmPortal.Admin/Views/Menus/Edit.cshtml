@@ -1,0 +1,100 @@
+﻿@model IzmPortal.Application.DTOs.Menu.UpdateMenuDto
+
+@{
+    ViewData["Title"] = "Menü Düzenle";
+
+    bool isChild = Model.ParentId.HasValue;
+}
+
+<div class="admin-page">
+
+    @await Html.PartialAsync(
+    "_PageHeader",
+        ("Menü Düzenle",
+        "Menü bilgilerini güncelleyin",
+        "<a href='/Menus' class='btn btn-outline-secondary btn-sm'>Geri</a>")
+        )
+
+    <div class="admin-table">
+
+        <form method="post">
+
+            @* ID *@
+            <input type="hidden" name="Id" value="@Model.Id" />
+
+            <div class="mb-3">
+                <label class="form-label">Menü Türü</label>
+                <select class="form-select" id="menuType" disabled>
+                    @if (isChild)
+                    {
+                        <option selected>Alt Menü</option>
+                    }
+                    else
+                    {
+                        <option selected>Ana Menü</option>
+                    }
+                </select>
+            </div>
+
+            @* Parent değiştirme – SADECE alt menüler için *@
+            @if (isChild)
+            {
+                <div class="mb-3">
+                    <label class="form-label">Bağlı Olduğu Ana Menü</label>
+                    <select class="form-select" name="ParentId">
+                        <option value="">Seçiniz</option>
+
+                        @foreach (var menu in ViewBag.ParentMenus as List<IzmPortal.Application.DTOs.Menu.MenuDto> ?? new())
+                        {
+                            @if (menu.Id == Model.ParentId)
+                            {
+                                <option value="@menu.Id" selected>@menu.Title</option>
+                            }
+                            else
+                            {
+                                <option value="@menu.Id">@menu.Title</option>
+                            }
+
+                        }
+                    </select>
+                </div>
+            }
+            else
+            {
+                @* Ana menü ise ParentId gönderme *@
+                <input type="hidden" name="ParentId" value="" />
+            }
+
+            <div class="mb-3">
+                <label class="form-label">Menü Başlığı</label>
+                <input type="text"
+                       name="Title"
+                       class="form-control"
+                       value="@Model.Title"
+                       required />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Sıra</label>
+                <input type="number"
+                       name="Order"
+                       class="form-control"
+                       min="1"
+                       value="@Model.Order"
+                       required />
+            </div>
+
+            <div class="d-flex gap-2 mt-4">
+                <button type="submit" class="btn btn-primary btn-sm">
+                    Kaydet
+                </button>
+
+                <a href="/Menus" class="btn btn-outline-secondary btn-sm">
+                    İptal
+                </a>
+            </div>
+
+        </form>
+
+    </div>
+</div>

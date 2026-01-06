@@ -1,5 +1,5 @@
 ﻿using IzmPortal.Admin.Extensions;
-using IzmPortal.Admin.ViewModels;
+using IzmPortal.Admin.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;

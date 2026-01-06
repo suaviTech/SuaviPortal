@@ -1,11 +1,9 @@
 ﻿using IzmPortal.Admin.Extensions;
 using IzmPortal.Application.DTOs.ApplicationShortcut;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IzmPortal.Admin.Controllers;
 
-[Authorize]
 public class ApplicationShortcutsController : BaseAdminController
 {
     public ApplicationShortcutsController(IHttpClientFactory factory)
@@ -13,9 +11,14 @@ public class ApplicationShortcutsController : BaseAdminController
     {
     }
 
-    public async Task<IActionResult> Index()
+    // =======================
+    // LIST
+    // =======================
+    public async Task<IActionResult> Index(CancellationToken ct)
     {
-        var response = await Api.GetAsync("/api/application-shortcuts/admin");
+        var response = await Api.GetAsync(
+            "/api/application-shortcuts/admin",
+            ct);
 
         var failure = await HandleApiFailureAsync(
             response,
@@ -30,10 +33,18 @@ public class ApplicationShortcutsController : BaseAdminController
         return View(items);
     }
 
-    public IActionResult Create() => View();
+    // =======================
+    // CREATE (GET)
+    // =======================
+    public IActionResult Create()
+    {
+        return View();
+    }
 
-    [HttpPost]
-    [ValidateAntiForgeryToken]
+    // =======================
+    // CREATE (POST)
+    // =======================
+    [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(
         CreateApplicationShortcutDto dto,
         CancellationToken ct)
@@ -42,7 +53,9 @@ public class ApplicationShortcutsController : BaseAdminController
             return View(dto);
 
         var response = await Api.PostAsJsonAsync(
-            "/api/applicationshortcuts", dto, ct);
+            "/api/application-shortcuts",
+            dto,
+            ct);
 
         var failure = await HandleApiFailureAsync(
             response,
@@ -51,21 +64,25 @@ public class ApplicationShortcutsController : BaseAdminController
         if (failure != null)
             return failure;
 
-        return SuccessAndRedirect("Kısayol oluşturuldu.");
+        return SuccessAndRedirect(
+            "Kısayol oluşturuldu.");
     }
 
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
+    // =======================
+    // EDIT (POST)
+    // =======================
+    [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(
-       UpdateApplicationShortcutDto dto,
-       CancellationToken ct)
+        UpdateApplicationShortcutDto dto,
+        CancellationToken ct)
     {
         if (!ModelState.IsValid)
             return View(dto);
 
         var response = await Api.PutAsJsonAsync(
-            $"/api/applicationshortcuts/{dto.Id}", dto, ct);
+            $"/api/application-shortcuts/{dto.Id}",
+            dto,
+            ct);
 
         var failure = await HandleApiFailureAsync(
             response,
@@ -74,15 +91,20 @@ public class ApplicationShortcutsController : BaseAdminController
         if (failure != null)
             return failure;
 
-        return SuccessAndRedirect("Kısayol güncellendi.");
+        return SuccessAndRedirect(
+            "Kısayol güncellendi.");
     }
 
-
-    [HttpPost]
-    public async Task<IActionResult> Activate(Guid id)
+    // =======================
+    // ACTIVATE
+    // =======================
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> Activate(Guid id, CancellationToken ct)
     {
         var response = await Api.PutAsync(
-            $"/api/application-shortcuts/{id}/activate", null);
+            $"/api/application-shortcuts/{id}/activate",
+            null,
+            ct);
 
         var failure = await HandleApiFailureAsync(
             response,
@@ -95,11 +117,16 @@ public class ApplicationShortcutsController : BaseAdminController
             "Uygulama kısayolu aktifleştirildi.");
     }
 
-    [HttpPost]
-    public async Task<IActionResult> Deactivate(Guid id)
+    // =======================
+    // DEACTIVATE
+    // =======================
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> Deactivate(Guid id, CancellationToken ct)
     {
         var response = await Api.PutAsync(
-            $"/api/application-shortcuts/{id}/deactivate", null);
+            $"/api/application-shortcuts/{id}/deactivate",
+            null,
+            ct);
 
         var failure = await HandleApiFailureAsync(
             response,
@@ -112,11 +139,15 @@ public class ApplicationShortcutsController : BaseAdminController
             "Uygulama kısayolu pasifleştirildi.");
     }
 
-    [HttpPost]
-    public async Task<IActionResult> Delete(Guid id)
+    // =======================
+    // DELETE
+    // =======================
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         var response = await Api.DeleteAsync(
-            $"/api/application-shortcuts/{id}");
+            $"/api/application-shortcuts/{id}",
+            ct);
 
         var failure = await HandleApiFailureAsync(
             response,

@@ -1,9 +1,6 @@
-﻿using IzmPortal.Domain.Entities;
-using IzmPortal.Domain.Enums;
-using IzmPortal.Infrastructure.Persistence;
+﻿using IzmPortal.Application.Abstractions.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace IzmPortal.Api.Controllers;
 
@@ -12,47 +9,29 @@ namespace IzmPortal.Api.Controllers;
 [Authorize(Policy = "SuperAdminOnly")]
 public class AuditLogsController : ControllerBase
 {
-    private readonly PortalDbContext _db;
+    private readonly IAuditQueryService _query;
 
-    public AuditLogsController(PortalDbContext db)
+    public AuditLogsController(IAuditQueryService query)
     {
-        _db = db;
+        _query = query;
     }
 
     [HttpGet]
     public async Task<IActionResult> Get(
-        DateTime? from,
-        DateTime? to,
-        int take = 200)
+    DateTime? from,
+    DateTime? to,
+    string? action,
+    string? entity,
+    string? user,
+    int take = 200,
+    CancellationToken ct = default)
     {
-        if (take is < 1 or > 500)
-            return BadRequest("Take değeri 1–500 aralığında olmalıdır.");
+        var result = await _query.GetAsync(
+            from, to, action, entity, user, take, ct);
 
-        var query = _db.AdminAuditLogs.AsNoTracking();
-
-        if (from.HasValue)
-            query = query.Where(x => x.CreatedAt >= from.Value.Date);
-
-        if (to.HasValue)
-        {
-            var toEnd = to.Value.Date.AddDays(1).AddTicks(-1);
-            query = query.Where(x => x.CreatedAt <= toEnd);
-        }
-
-        var items = await query
-            .OrderByDescending(x => x.CreatedAt)
-            .Take(take)
-            .Select(x => new
-            {
-                x.UserName,
-                x.Action,
-                x.EntityName,
-                x.EntityId,
-                x.IpAddress,
-                x.CreatedAt
-            })
-            .ToListAsync();
-
-        return Ok(items);
+        return result.Succeeded
+            ? Ok(result)
+            : BadRequest(result);
     }
+
 }

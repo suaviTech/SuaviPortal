@@ -33,11 +33,11 @@ public static class DependencyInjection
         services.AddScoped<IAnnouncementService, AnnouncementService>();
         services.AddScoped<ICategoryService, CategoryService>();
         services.AddScoped<IMenuService, MenuService>();
-        services.AddScoped<ISubMenuService, SubMenuService>();
         services.AddScoped<IMenuDocumentService, MenuDocumentService>();
         services.AddScoped<IApplicationShortcutService, ApplicationShortcutService>();
         services.AddScoped<ISliderService, SliderService>();
         services.AddScoped<IAuditService, AuditService>();
+        services.AddScoped<IAuditQueryService, AuditQueryService>();
         services.AddScoped<IFileStorageService, LocalFileStorageService>();
 
         return services;

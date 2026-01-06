@@ -1,117 +1,89 @@
 ﻿@model List<IzmPortal.Application.DTOs.Announcement.AnnouncementDto>
 
-@{
-    ViewData["Title"] = "Duyurular";
-}
-
-<h2>Duyurular</h2>
-
-<a asp-action="Create" class="btn btn-primary mb-3">
-    Yeni Duyuru
-</a>
-
-<table class="table table-sm table-striped align-middle">
-    <thead class="table-light">
-        <tr>
-            <th>Başlık</th>
-            <th>Kategori</th>
-            <th>Tarih</th>
-            <th>Durum</th>
-            <th style="width:240px">İşlemler</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model)
-        {
-            <tr>
-                <td>
-                    @if (!string.IsNullOrEmpty(item.PdfUrl))
-                    {
-                        <a href="javascript:void(0)"
-                           class="text-decoration-none"
-                           onclick="openPdfModal('@item.PdfUrl', '@item.Title')">
-                            @item.Title
-                        </a>
-                    }
-                    else
-                    {
-                        @item.Title
-                    }
-                </td>
-                <td>@item.CategoryName</td>
-                <td>@item.CreatedAt.ToString("dd.MM.yyyy")</td>
-                <td>
-                    @if (item.IsActive)
-                    {
-                        <span class="badge bg-success">Aktif</span>
-                    }
-                    else
-                    {
-                        <span class="badge bg-secondary">Pasif</span>
-                    }
-                </td>
-                <td>
-                    <a asp-action="Edit"
-                       asp-route-id="@item.Id"
-                       class="btn btn-sm btn-warning">
-                        Düzenle
-                    </a>
-
-                    @if (item.IsActive)
-                    {
-                        <form asp-action="Deactivate"
-                              asp-route-id="@item.Id"
-                              method="post"
-                              class="d-inline">
-                            <button class="btn btn-sm btn-outline-secondary">
-                                Pasif
-                            </button>
-                        </form>
-                    }
-                    else
-                    {
-                        <form asp-action="Activate"
-                              asp-route-id="@item.Id"
-                              method="post"
-                              class="d-inline">
-                            <button class="btn btn-sm btn-outline-success">
-                                Aktif
-                            </button>
-                        </form>
-                    }
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
-
-@* ================= PDF MODAL ================= *@
-<div class="modal fade" id="pdfModal" tabindex="-1">
-    <div class="modal-dialog modal-xl modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="pdfModalTitle"></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body p-0">
-                <iframe id="pdfFrame"
-                        style="width:100%; height:80vh; border:none;">
-                </iframe>
-            </div>
+<div class="admin-card">
+    <div class="admin-card-header d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="mb-0">Duyuru Yönetimi</h5>
+            <small class="text-muted">Sistemdeki duyuruları yönetin</small>
         </div>
+
+        <a asp-action="Create"
+           class="admin-icon-btn"
+           title="Yeni Duyuru">
+            <i class="bi bi-plus"></i>
+        </a>
+
+    </div>
+
+    <div class="admin-card-body p-0">
+
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Başlık</th>
+                    <th>Kategori</th>
+                    <th class="text-center">Durum</th>
+                    <th style="width:170px" class="text-end">İşlemler</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    var rowClass = item.IsActive
+                    ? "row-active"
+                    : "row-passive";
+
+                    <tr class="@rowClass">
+                        <td>
+                            <strong>@item.Title</strong>
+                        </td>
+
+                        <td class="text-muted">
+                            @item.CategoryName
+                        </td>
+
+                        <td class="text-center">
+                            <span class="status-dot @(item.IsActive ? "status-active" : "status-passive")"></span>
+                        </td>
+
+                        <td class="text-end">
+                            <div class="d-inline-flex align-items-center gap-2">
+
+                                @if (item.IsActive)
+                                {
+                                    <form asp-action="Deactivate"
+                                          method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@item.Id" />
+                                        <button class="btn btn-outline-secondary btn-sm fixed-action-btn">
+                                            Pasif Yap
+                                        </button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <form asp-action="Activate"
+                                          method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@item.Id" />
+                                        <button class="btn btn-outline-success btn-sm fixed-action-btn">
+                                            Aktif Yap
+                                        </button>
+                                    </form>
+                                }
+
+                                <a asp-action="Edit"
+                                   asp-route-id="@item.Id"
+                                   class="btn btn-outline-primary btn-sm fixed-icon-btn">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
     </div>
 </div>
-
-@section Scripts {
-    <script>
-        function openPdfModal(url, title) {
-            document.getElementById("pdfFrame").src = url;
-            document.getElementById("pdfModalTitle").innerText = title;
-
-            const modal = new bootstrap.Modal(
-                document.getElementById("pdfModal")
-            );
-            modal.show();
-        }
-    </script>
-}
