@@ -1,4 +1,4 @@
-﻿using IzmPortal.Api.DTOs.Auth;
+﻿using IzmPortal.Application.DTOs.Auth;
 using IzmPortal.Api.Security;
 using IzmPortal.Infrastructure.Identity;
 using IzmPortal.Infrastructure.Persistence;
@@ -82,7 +82,7 @@ public class AuthController : ControllerBase
 
         return Ok(new LoginResponse
         {
-            Token = token,
+            AccessToken = token,
             ForcePasswordChange = user.ForcePasswordChange
         });
     }

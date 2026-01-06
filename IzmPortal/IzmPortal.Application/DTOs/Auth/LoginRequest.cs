@@ -1,4 +1,4 @@
-﻿namespace IzmPortal.Api.DTOs.Auth;
+﻿namespace IzmPortal.Application.DTOs.Auth;
 
 public class LoginRequest
 {
